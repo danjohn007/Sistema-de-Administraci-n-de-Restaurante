@@ -278,7 +278,8 @@ class DishController extends BaseController {
         }
     }
     
-    public function view($id) {
+    // Renamed from 'view' to 'show' to avoid conflict with BaseController::view($viewName, $data = [])
+    public function show($id) {
         $this->requireRole(ROLE_ADMIN);
         
         $dish = $this->dishModel->find($id);

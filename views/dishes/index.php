@@ -104,7 +104,7 @@
                             </td>
                             <td class="text-center">
                                 <div class="btn-group btn-group-sm" role="group">
-                                    <a href="<?= BASE_URL ?>/dishes/view/<?= $dish['id'] ?>" 
+                                    <a href="<?= BASE_URL ?>/dishes/show/<?= $dish['id'] ?>" 
                                        class="btn btn-outline-info" title="Ver Detalles">
                                         <i class="bi bi-eye"></i>
                                     </a>
