@@ -8,6 +8,31 @@ abstract class BaseModel {
         $this->db = Database::getInstance();
     }
     
+    // Public methods to access database functionality while preserving encapsulation
+    public function getDb() {
+        return $this->db;
+    }
+    
+    public function beginTransaction() {
+        return $this->db->beginTransaction();
+    }
+    
+    public function commit() {
+        return $this->db->commit();
+    }
+    
+    public function rollback() {
+        return $this->db->rollback();
+    }
+    
+    public function prepare($query) {
+        return $this->db->prepare($query);
+    }
+    
+    public function lastInsertId() {
+        return $this->db->lastInsertId();
+    }
+    
     public function find($id) {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE {$this->primaryKey} = ?");
         $stmt->execute([$id]);

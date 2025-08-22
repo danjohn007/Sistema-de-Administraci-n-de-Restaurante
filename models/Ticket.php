@@ -154,5 +154,29 @@ class Ticket extends BaseModel {
             'totals' => $totals
         ];
     }
+    
+    public function getSalesReportData($startDate = null, $endDate = null) {
+        $startDate = $startDate ?: date('Y-m-d');
+        $endDate = $endDate ?: date('Y-m-d');
+        
+        $query = "SELECT 
+                    DATE(t.created_at) as sale_date,
+                    COUNT(t.id) as total_tickets,
+                    SUM(t.subtotal) as total_subtotal,
+                    SUM(t.tax) as total_tax,
+                    SUM(t.total) as total_amount,
+                    u.name as cashier_name,
+                    COUNT(t.id) as tickets_by_cashier
+                  FROM {$this->table} t
+                  JOIN users u ON t.cashier_id = u.id
+                  WHERE DATE(t.created_at) BETWEEN ? AND ?
+                  GROUP BY DATE(t.created_at), t.cashier_id, u.name
+                  ORDER BY sale_date DESC, total_amount DESC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$startDate, $endDate]);
+        
+        return $stmt->fetchAll();
+    }
 }
 ?>

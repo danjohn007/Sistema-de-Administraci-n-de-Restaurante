@@ -38,13 +38,13 @@ class WaitersController extends BaseController {
                            JOIN users u ON w.user_id = u.id 
                            WHERE w.active = 1 
                            AND (u.name LIKE ? OR u.email LIKE ? OR w.employee_code LIKE ?)";
-            $stmt = $this->waiterModel->db->prepare($countQuery);
+            $stmt = $this->waiterModel->prepare($countQuery);
             $stmt->execute($params);
             $total = $stmt->fetch()['total'];
             
             // Get data
             $query .= " LIMIT {$perPage} OFFSET {$offset}";
-            $stmt = $this->waiterModel->db->prepare($query);
+            $stmt = $this->waiterModel->prepare($query);
             $stmt->execute($params);
             $waiters = $stmt->fetchAll();
             
@@ -178,7 +178,7 @@ class WaitersController extends BaseController {
         ];
         
         try {
-            $this->waiterModel->db->beginTransaction();
+            $this->waiterModel->beginTransaction();
             
             // Update user
             $userUpdated = $this->userModel->update($waiter['user_id'], $userData);
@@ -192,11 +192,11 @@ class WaitersController extends BaseController {
                 throw new Exception('Error al actualizar los datos del mesero');
             }
             
-            $this->waiterModel->db->commit();
+            $this->waiterModel->commit();
             $this->redirect('waiters', 'success', 'Mesero actualizado correctamente');
             
         } catch (Exception $e) {
-            $this->waiterModel->db->rollback();
+            $this->waiterModel->rollback();
             $this->view('waiters/edit', [
                 'error' => 'Error al actualizar el mesero: ' . $e->getMessage(),
                 'waiter' => $waiter,
@@ -215,7 +215,7 @@ class WaitersController extends BaseController {
         }
         
         try {
-            $this->waiterModel->db->beginTransaction();
+            $this->waiterModel->beginTransaction();
             
             // Check if waiter has assigned tables
             $tables = $this->tableModel->findAll(['waiter_id' => $id, 'active' => 1]);
@@ -235,11 +235,11 @@ class WaitersController extends BaseController {
                 throw new Exception('Error al desactivar el usuario del mesero');
             }
             
-            $this->waiterModel->db->commit();
+            $this->waiterModel->commit();
             $this->redirect('waiters', 'success', 'Mesero eliminado correctamente');
             
         } catch (Exception $e) {
-            $this->waiterModel->db->rollback();
+            $this->waiterModel->rollback();
             $this->redirect('waiters', 'error', 'Error al eliminar el mesero: ' . $e->getMessage());
         }
     }
@@ -271,7 +271,7 @@ class WaitersController extends BaseController {
         $tableIds = $_POST['table_ids'] ?? [];
         
         try {
-            $this->tableModel->db->beginTransaction();
+            $this->tableModel->beginTransaction();
             
             // First, remove all current table assignments for this waiter
             $currentTables = $this->tableModel->findAll(['waiter_id' => $waiterId, 'active' => 1]);
@@ -290,11 +290,11 @@ class WaitersController extends BaseController {
                 }
             }
             
-            $this->tableModel->db->commit();
+            $this->tableModel->commit();
             $this->redirect('waiters', 'success', 'Mesas asignadas correctamente');
             
         } catch (Exception $e) {
-            $this->tableModel->db->rollback();
+            $this->tableModel->rollback();
             $this->redirect('waiters/assignTables/' . $waiterId, 'error', 'Error al asignar mesas: ' . $e->getMessage());
         }
     }

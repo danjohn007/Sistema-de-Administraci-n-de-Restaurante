@@ -192,5 +192,22 @@ class Order extends BaseModel {
         
         return $stmt->fetch();
     }
+    
+    public function getOrdersReadyForTicket() {
+        // Get orders that are ready to be converted to tickets (status = 'entregado')
+        $query = "SELECT o.*, t.number as table_number, 
+                         u.name as waiter_name, w.employee_code
+                  FROM {$this->table} o
+                  JOIN tables t ON o.table_id = t.id
+                  JOIN waiters w ON o.waiter_id = w.id
+                  JOIN users u ON w.user_id = u.id
+                  WHERE o.status = 'entregado'
+                  ORDER BY o.updated_at ASC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+        
+        return $stmt->fetchAll();
+    }
 }
 ?>
