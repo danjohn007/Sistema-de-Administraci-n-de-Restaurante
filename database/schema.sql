@@ -1,6 +1,6 @@
 -- Crear base de datos
-CREATE DATABASE IF NOT EXISTS restaurante_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE restaurante_db;
+CREATE DATABASE IF NOT EXISTS ejercito_restaurant CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE ejercito_restaurant;
 
 -- Tabla de usuarios
 CREATE TABLE IF NOT EXISTS users (

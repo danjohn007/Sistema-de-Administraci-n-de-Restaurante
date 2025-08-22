@@ -1,5 +1,5 @@
 -- Datos de ejemplo para el sistema de restaurante
-USE restaurante_db;
+USE ejercito_restaurant;
 
 -- Insertar usuarios (contraseñas: todas son "123456")
 INSERT INTO users (email, password, name, role) VALUES
