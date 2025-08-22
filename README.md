@@ -347,6 +347,32 @@ Edita `public/css/style.css` para:
 3. Crear vistas en `views/`
 4. Actualizar navegación en `views/layouts/header.php`
 
+## 🔧 Cambios Recientes
+
+### Corrección de Errores de Declaración en Controladores (v1.0.1)
+
+**Fecha:** 2024-08-22
+
+**Problema Resuelto:** 
+Se corrigieron errores fatales de declaración en los controladores DishController, OrdersController y TicketsController debido a conflictos de firma de métodos con BaseController.
+
+**Cambios Realizados:**
+- **DishController.php**: Método `view($id)` renombrado a `show($id)` (línea 282)
+- **OrdersController.php**: Método `view($id)` renombrado a `show($id)` (línea 47) 
+- **TicketsController.php**: Método `view($id)` renombrado a `show($id)` (línea 25)
+- **Actualización de rutas**: Cambio de `/dishes/view/{id}` a `/dishes/show/{id}` en vistas
+- **Nuevos controladores**: Creación de OrdersController y TicketsController con funcionalidad básica
+- **Nuevas vistas**: Agregadas plantillas básicas para orders y tickets
+
+**Razón del Cambio:**
+El BaseController define un método `view($viewName, $data = [])` que maneja la renderización de vistas. Los controladores hijos no pueden definir métodos `view()` con firmas diferentes sin causar errores fatales de compatibilidad de declaración.
+
+**Compatibilidad:**
+- ✅ Navegación principal mantiene funcionalidad
+- ✅ Gestión de platillos sigue funcionando 
+- ✅ Sistema de permisos intacto
+- ✅ Enlaces actualizados automáticamente
+
 ## 🐛 Troubleshooting
 
 ### Error de Conexión a Base de Datos
