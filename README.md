@@ -11,7 +11,33 @@ Un sistema completo de administración para restaurantes desarrollado en PHP pur
 - Control de permisos por rol
 - Autenticación segura con hashing de contraseñas
 - CRUD completo de usuarios con filtros por rol
-- Cambio de contraseñas por administrador
+- Cambio de contraseñas por administrador y autogestión por usuarios
+- Perfil de usuario con edición de información personal
+
+### Gestión de Pedidos (Completamente Implementado)
+- **Creación de Pedidos**: Interfaz intuitiva con selección de platillos del menú
+- **Estados de Pedido**: pendiente → en preparación → listo → entregado
+- **Gestión por Roles**: 
+  - Meseros: Pueden crear y gestionar sus propios pedidos
+  - Administradores: Acceso completo a todos los pedidos
+- **Funcionalidades Avanzadas**:
+  - Selección interactiva de platillos con cantidad y notas especiales
+  - Cálculo automático de totales
+  - Edición de pedidos existentes con adición/eliminación de items
+  - Vista detallada con historial de cambios
+  - Filtros por mesa, mesero, estado y fecha
+  - Estadísticas en tiempo real por estado
+
+### Sistema de Tickets y Facturación (Completamente Implementado)
+- **Generación de Tickets**: Desde pedidos en estado "listo"
+- **Cálculo Automático**: Subtotal, IVA (16%) y total
+- **Métodos de Pago**: Efectivo, tarjeta, transferencia
+- **Impresión**: Formato optimizado para tickets de punto de venta
+- **Reportes**: Ventas por fecha, método de pago y cajero
+- **Gestión por Roles**:
+  - Cajeros: Pueden generar tickets y ver sus propias transacciones
+  - Administradores: Acceso completo con reportes avanzados
+- **Numeración Automática**: Tickets con formato único (TYYYYMMDDNNNN)
 
 ### Gestión de Mesas
 - Alta, baja y modificación de mesas
@@ -40,16 +66,21 @@ Un sistema completo de administración para restaurantes desarrollado en PHP pur
 
 ### Menú y Pedidos
 - Administración completa de platillos (alta, baja, edición, precios)
-- Creación de pedidos asignados a mesas
-- Carga rápida de productos del menú
+- Creación de pedidos asignados a mesas con interfaz interactiva
+- Selección de platillos con cantidad y notas especiales
+- Carga rápida de productos del menú organizados por categorías
 - Estados de pedido: pendiente → en preparación → listo → entregado
+- Edición de pedidos existentes con adición de nuevos items
+- Cálculo automático de totales y subtotales
 
 ### Sistema de Tickets
-- Generación automática de tickets al cerrar cuentas
+- Generación automática de tickets desde pedidos listos
 - Detalles completos: mesa, mesero, platillos, cantidades, precios, total
 - Cálculo automático de impuestos (IVA 16%)
-- Exportación e impresión de tickets
-- Diferentes métodos de pago
+- Exportación e impresión de tickets en formato optimizado
+- Diferentes métodos de pago (efectivo, tarjeta, transferencia)
+- Reportes de ventas por fecha y método de pago
+- Numeración automática de tickets con formato único
 
 ## 🛠️ Tecnologías Utilizadas
 
@@ -158,7 +189,7 @@ Si instalas en un subdirectorio (`/var/www/html/restaurante/`):
 
 ## 👥 Usuarios de Prueba
 
-El sistema incluye usuarios predefinidos para testing:
+El sistema incluye usuarios predefinidos para testing. Estas credenciales están disponibles en la base de datos de ejemplo:
 
 | Rol | Email | Contraseña | Descripción |
 |-----|-------|------------|-------------|
@@ -166,6 +197,12 @@ El sistema incluye usuarios predefinidos para testing:
 | Cajero | cajero@restaurante.com | 123456 | Gestión de tickets y cobros |
 | Mesero | mesero1@restaurante.com | 123456 | Juan Pérez - Código MES001 |
 | Mesero | mesero2@restaurante.com | 123456 | Ana López - Código MES002 |
+
+> **Nota de Seguridad**: Estos usuarios son solo para testing. En producción, cambie todas las contraseñas por defecto y elimine los usuarios que no necesite.
+
+### Cambio de Contraseñas
+
+Todos los usuarios pueden cambiar su contraseña desde la sección "Mi Perfil" → "Cambiar Contraseña". Los administradores también pueden cambiar contraseñas de otros usuarios desde la gestión de usuarios.
 
 ### Crear Usuarios Adicionales
 
@@ -294,7 +331,11 @@ El sistema utiliza URLs amigables:
 - `/` - Página de login
 - `/auth/login` - Login
 - `/auth/logout` - Logout
-- `/auth/changePassword` - Cambiar contraseña
+
+### Perfil de Usuario
+- `/profile` - Ver perfil del usuario
+- `/profile/edit` - Editar perfil
+- `/profile/changePassword` - Cambiar contraseña propia
 
 ### Panel Principal
 - `/dashboard` - Dashboard principal
@@ -319,12 +360,25 @@ El sistema utiliza URLs amigables:
   - `/dishes/create` - Crear platillo
   - `/dishes/edit/{id}` - Editar platillo
   - `/dishes/delete/{id}` - Eliminar platillo
-  - `/dishes/view/{id}` - Ver detalles del platillo
+  - `/dishes/show/{id}` - Ver detalles del platillo
   - `/dishes/categories` - Gestionar categorías
 
-### Operaciones
-- `/orders` - Gestión de pedidos
-- `/tickets` - Gestión de tickets
+### Operaciones - Pedidos (Meseros y Administradores)
+- `/orders` - Lista de pedidos (filtrada por rol)
+- `/orders/create` - Crear nuevo pedido
+- `/orders/show/{id}` - Ver detalles del pedido
+- `/orders/edit/{id}` - Editar pedido existente
+- `/orders/updateStatus/{id}` - Cambiar estado del pedido
+- `/orders/table/{id}` - Ver pedidos de mesa específica
+- `/orders/delete/{id}` - Eliminar pedido (solo admin)
+
+### Operaciones - Tickets (Cajeros y Administradores)
+- `/tickets` - Lista de tickets (filtrada por rol)
+- `/tickets/create` - Generar nuevo ticket
+- `/tickets/show/{id}` - Ver detalles del ticket
+- `/tickets/print/{id}` - Imprimir ticket
+- `/tickets/report` - Reportes de ventas
+- `/tickets/delete/{id}` - Eliminar ticket (solo admin)
 
 ## 🔧 Personalización
 
@@ -371,6 +425,83 @@ Edita `public/css/style.css` para:
 3. Verificar que los archivos JS están accesibles
 
 ## 📋 Changelog
+
+### v1.2.0 - 2024-12-22
+
+#### Nuevas Características Implementadas
+- **Módulo de Pedidos Completo**: Funcionalidad completa de gestión de pedidos
+  - Creación de pedidos con selección interactiva de platillos
+  - Vista detallada de pedidos con información completa
+  - Edición de pedidos existentes con adición de nuevos items
+  - Cambio de estado de pedidos (pendiente → en preparación → listo → entregado)
+  - Filtros por mesero y permisos basados en roles
+  - Estadísticas en tiempo real por estado de pedido
+  - Rutas: `/orders`, `/orders/create`, `/orders/show/{id}`, `/orders/edit/{id}`, `/orders/updateStatus/{id}`
+
+- **Módulo de Tickets Completo**: Sistema completo de generación y gestión de tickets
+  - Generación de tickets desde pedidos listos
+  - Cálculo automático de IVA (16%)
+  - Múltiples métodos de pago (efectivo, tarjeta, transferencia)
+  - Vista detallada de tickets con información completa
+  - Impresión de tickets en formato optimizado
+  - Reportes de ventas por fecha y método de pago
+  - Filtros por cajero y fecha
+  - Rutas: `/tickets`, `/tickets/create`, `/tickets/show/{id}`, `/tickets/print/{id}`, `/tickets/report`
+
+- **Funcionalidad de Cambio de Contraseña para Todos los Usuarios**:
+  - Los usuarios pueden cambiar su propia contraseña desde su perfil
+  - Validación de contraseña actual antes del cambio
+  - Confirmación de nueva contraseña
+  - Validación de seguridad (mínimo 6 caracteres)
+  - Ruta: `/profile/changePassword`
+
+#### Mejoras en la UI/UX
+- **Eliminación de Mensajes de Usuarios de Prueba**: Removido el texto que mostraba credenciales de prueba en la página de login
+- **Dashboard Mejorado**: Los botones de acceso rápido ahora funcionan completamente
+- **Interfaz Interactiva para Pedidos**: 
+  - Selección de platillos con botones +/- 
+  - Cálculo automático de totales
+  - Organización por categorías
+  - Preview en tiempo real del pedido
+- **Interfaz de Tickets**:
+  - Selección visual de pedidos listos
+  - Preview del ticket con cálculos automáticos
+  - Formato de impresión optimizado para tickets de punto de venta
+
+#### Mejoras en Seguridad y Permisos
+- **Control de Acceso Granular**:
+  - Meseros solo ven sus propios pedidos y mesas asignadas
+  - Cajeros solo pueden generar tickets y ver sus propias transacciones
+  - Administradores tienen acceso completo a todo el sistema
+- **Validaciones Mejoradas**:
+  - Validación de estado de pedidos antes de generar tickets
+  - Verificación de permisos en todas las operaciones
+  - Sanitización de entradas en todos los formularios
+
+#### Nuevas Rutas y Funcionalidades
+```
+Módulo de Pedidos:
+- GET/POST /orders/create - Crear nuevo pedido
+- GET /orders/show/{id} - Ver detalles del pedido
+- GET/POST /orders/edit/{id} - Editar pedido existente
+- POST /orders/updateStatus/{id} - Cambiar estado del pedido
+- GET /orders/table/{id} - Ver pedidos de una mesa específica
+
+Módulo de Tickets:
+- GET/POST /tickets/create - Generar nuevo ticket
+- GET /tickets/show/{id} - Ver detalles del ticket
+- GET /tickets/print/{id} - Imprimir ticket
+- GET /tickets/report - Reportes de ventas
+- DELETE /tickets/delete/{id} - Eliminar ticket (solo admin)
+
+Gestión de Perfil:
+- GET/POST /profile/changePassword - Cambiar contraseña propia
+```
+
+#### Correcciones de Errores
+- **Corregida duplicación de controladores**: Removidas clases duplicadas (UserController/UsersController, etc.)
+- **Mejorada la gestión de mesas**: Agregado método `getWaiterTables()` en el modelo Table
+- **Validaciones mejoradas**: Mejor manejo de errores y validaciones en todos los formularios
 
 ### v1.1.0 - 2024-12-22
 
