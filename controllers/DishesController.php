@@ -43,13 +43,13 @@ class DishesController extends BaseController {
             
             // Get total count
             $countQuery = str_replace("SELECT *", "SELECT COUNT(*) as total", $query);
-            $stmt = $this->dishModel->db->prepare($countQuery);
+            $stmt = $this->dishModel->prepare($countQuery);
             $stmt->execute($params);
             $total = $stmt->fetch()['total'];
             
             // Get data
             $query .= " LIMIT {$perPage} OFFSET {$offset}";
-            $stmt = $this->dishModel->db->prepare($query);
+            $stmt = $this->dishModel->prepare($query);
             $stmt->execute($params);
             $dishes = $stmt->fetchAll();
             
@@ -262,7 +262,7 @@ class DishesController extends BaseController {
         }
         
         $query = "UPDATE dishes SET category = ? WHERE category = ? AND active = 1";
-        $stmt = $this->dishModel->db->prepare($query);
+        $stmt = $this->dishModel->prepare($query);
         
         if (!$stmt->execute([$newCategory, $oldCategory])) {
             throw new Exception('Error al actualizar los platillos');
@@ -271,7 +271,7 @@ class DishesController extends BaseController {
     
     private function deleteDishCategory($category) {
         $query = "UPDATE dishes SET category = NULL WHERE category = ? AND active = 1";
-        $stmt = $this->dishModel->db->prepare($query);
+        $stmt = $this->dishModel->prepare($query);
         
         if (!$stmt->execute([$category])) {
             throw new Exception('Error al eliminar la categoría');

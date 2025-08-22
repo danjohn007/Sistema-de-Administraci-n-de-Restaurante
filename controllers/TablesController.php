@@ -50,13 +50,13 @@ class TablesController extends BaseController {
             
             // Get total count
             $countQuery = str_replace("SELECT t.*, w.employee_code, u.name as waiter_name", "SELECT COUNT(*) as total", $query);
-            $stmt = $this->tableModel->db->prepare($countQuery);
+            $stmt = $this->tableModel->prepare($countQuery);
             $stmt->execute($params);
             $total = $stmt->fetch()['total'];
             
             // Get data
             $query .= " LIMIT {$perPage} OFFSET {$offset}";
-            $stmt = $this->tableModel->db->prepare($query);
+            $stmt = $this->tableModel->prepare($query);
             $stmt->execute($params);
             $tables = $stmt->fetchAll();
             

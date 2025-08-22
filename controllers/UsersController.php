@@ -42,13 +42,13 @@ class UsersController extends BaseController {
             
             // Get total count
             $countQuery = str_replace("SELECT *", "SELECT COUNT(*) as total", $query);
-            $stmt = $this->userModel->db->prepare($countQuery);
+            $stmt = $this->userModel->prepare($countQuery);
             $stmt->execute($params);
             $total = $stmt->fetch()['total'];
             
             // Get data
             $query .= " LIMIT {$perPage} OFFSET {$offset}";
-            $stmt = $this->userModel->db->prepare($query);
+            $stmt = $this->userModel->prepare($query);
             $stmt->execute($params);
             $users = $stmt->fetchAll();
             
