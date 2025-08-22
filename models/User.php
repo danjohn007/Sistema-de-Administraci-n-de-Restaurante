@@ -1,6 +1,7 @@
 <?php
 class User extends BaseModel {
     protected $table = 'users';
+    public $db; // Make db property public for UserController access
     
     public function authenticate($email, $password) {
         $user = $this->findBy('email', $email);

@@ -1,6 +1,7 @@
 <?php
 class Waiter extends BaseModel {
     protected $table = 'waiters';
+    public $db; // Make db property public for controller access
     
     public function getWaitersWithUsers() {
         $query = "SELECT w.*, u.name, u.email, u.active as user_active 

@@ -1,6 +1,7 @@
 <?php
 class Dish extends BaseModel {
     protected $table = 'dishes';
+    public $db; // Make db property public for controller access
     
     public function getDishesByCategory() {
         $query = "SELECT * FROM {$this->table} 
