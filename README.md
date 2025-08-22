@@ -372,6 +372,36 @@ Edita `public/css/style.css` para:
 
 ## 📋 Changelog
 
+### v1.2.0 - 2024-12-22
+
+#### Correcciones de Errores Críticos
+- **Errores fatales de acceso a propiedades protegidas corregidos**:
+  - Agregados métodos públicos en `BaseModel` para acceso encapsulado a la base de datos
+  - Métodos agregados: `getDb()`, `beginTransaction()`, `commit()`, `rollback()`, `prepare()`, `lastInsertId()`
+  - Actualizado `WaitersController` para usar los nuevos métodos en lugar de acceso directo a `$db`
+  - Corregidos accesos directos a `$this->modelo->db->` en transacciones de base de datos
+
+#### Nuevas Funcionalidades
+- **Sistema de pedidos mejorado**:
+  - Implementada funcionalidad completa de creación de pedidos con asignación de meseros
+  - Nuevo formulario interactivo para crear pedidos con selección de mesa, mesero y platillos
+  - Validación completa de datos y disponibilidad de mesas
+  - Actualización automática de estado de mesas al crear pedidos
+  - Cálculo dinámico de totales en tiempo real
+
+- **Funciones de modelo agregadas**:
+  - `Order::getOrdersReadyForTicket()` - Obtiene pedidos listos para generar tickets
+  - `Ticket::getSalesReportData()` - Genera datos de reportes de ventas por período
+
+#### Mejoras Técnicas
+- **Encapsulación mejorada**: Eliminada exposición de propiedades `$db` en modelos
+- **Arquitectura MVC más sólida**: Controladores ya no acceden directamente a propiedades protegidas
+- **Transacciones de base de datos**: Manejo consistente a través de métodos públicos del modelo base
+
+#### Rutas Nuevas/Modificadas
+- `POST /orders/create` - Procesamiento de nuevos pedidos con validación completa
+- `GET /orders/create` - Formulario interactivo para crear pedidos
+
 ### v1.1.0 - 2024-12-22
 
 #### Nuevas Características

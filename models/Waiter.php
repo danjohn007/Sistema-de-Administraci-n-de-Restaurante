@@ -1,7 +1,6 @@
 <?php
 class Waiter extends BaseModel {
     protected $table = 'waiters';
-    public $db; // Make db property public for controller access
     
     public function getWaitersWithUsers() {
         $query = "SELECT w.*, u.name, u.email, u.active as user_active 
@@ -10,7 +9,7 @@ class Waiter extends BaseModel {
                   WHERE w.active = 1 
                   ORDER BY u.name ASC";
         
-        $stmt = $this->db->prepare($query);
+        $stmt = $this->prepare($query);
         $stmt->execute();
         
         return $stmt->fetchAll();
@@ -22,7 +21,7 @@ class Waiter extends BaseModel {
     
     public function createWaiter($userData, $waiterData) {
         try {
-            $this->db->beginTransaction();
+            $this->beginTransaction();
             
             // Create user first
             $userModel = new User();
@@ -40,11 +39,11 @@ class Waiter extends BaseModel {
                 throw new Exception('Error al crear mesero');
             }
             
-            $this->db->commit();
+            $this->commit();
             return $waiterId;
             
         } catch (Exception $e) {
-            $this->db->rollback();
+            $this->rollback();
             throw $e;
         }
     }

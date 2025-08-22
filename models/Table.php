@@ -1,7 +1,6 @@
 <?php
 class Table extends BaseModel {
     protected $table = 'tables';
-    public $db; // Make db property public for controller access
     
     public function getTablesWithWaiters() {
         $query = "SELECT t.*, w.employee_code, u.name as waiter_name 
@@ -11,7 +10,7 @@ class Table extends BaseModel {
                   WHERE t.active = 1 
                   ORDER BY t.number ASC";
         
-        $stmt = $this->db->prepare($query);
+        $stmt = $this->prepare($query);
         $stmt->execute();
         
         return $stmt->fetchAll();
