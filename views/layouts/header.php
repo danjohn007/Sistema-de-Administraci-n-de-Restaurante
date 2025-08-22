@@ -78,6 +78,9 @@
                             <i class="bi bi-person-circle"></i> <?= htmlspecialchars($_SESSION['user_name']) ?>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/profile">
+                                <i class="bi bi-person"></i> Mi Perfil
+                            </a></li>
                             <li><a class="dropdown-item" href="<?= BASE_URL ?>/auth/changePassword">
                                 <i class="bi bi-key"></i> Cambiar Contraseña
                             </a></li>

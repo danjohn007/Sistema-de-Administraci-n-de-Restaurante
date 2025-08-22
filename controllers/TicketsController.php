@@ -21,7 +21,7 @@ class TicketsController extends BaseController {
         ]);
     }
     
-    public function view($id) {
+    public function show($id) {
         // Placeholder for ticket details
         $this->view('tickets/view', [
             'title' => 'Detalles del Ticket',

@@ -278,7 +278,7 @@ class DishesController extends BaseController {
         }
     }
     
-    public function view($id) {
+    public function show($id) {
         $this->requireRole(ROLE_ADMIN);
         
         $dish = $this->dishModel->find($id);

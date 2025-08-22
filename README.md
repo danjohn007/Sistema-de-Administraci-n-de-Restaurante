@@ -370,6 +370,33 @@ Edita `public/css/style.css` para:
 2. Comprobar consola del navegador para errores
 3. Verificar que los archivos JS están accesibles
 
+## 📋 Changelog
+
+### v1.1.0 - 2024-12-22
+
+#### Nuevas Características
+- **Sección "Mi Perfil"**: Los usuarios pueden ver y editar su información personal
+  - Ruta: `/profile` (ver perfil) y `/profile/edit` (editar perfil)
+  - Accesible desde el menú desplegable del usuario en la barra de navegación
+  - Permite editar nombre y email (el rol no es modificable por el usuario)
+  - Validación de email único y campos requeridos
+
+#### Correcciones
+- **Corregidos errores fatales de declaración en controladores:**
+  - Renombrado método `view($id)` a `show($id)` en DishesController, OrdersController y TicketsController
+  - Los métodos ahora son compatibles con el método `view($viewName, $data = [])` de BaseController
+  - Actualizada referencia en la vista de platillos de `/dishes/view/` a `/dishes/show/`
+- **Corregido enlace "Nuevo Usuario"** en acciones rápidas del dashboard:
+  - Ahora redirige correctamente a `/users/create` en lugar de `/auth/register`
+
+#### Rutas Principales Agregadas/Modificadas
+- `GET /profile` - Ver información del perfil del usuario
+- `GET /profile/edit` - Formulario de edición del perfil
+- `POST /profile/edit` - Procesar actualización del perfil
+- `GET /dishes/show/{id}` - Ver detalles de un platillo (antes era `/dishes/view/{id}`)
+- `GET /orders/show/{id}` - Ver detalles de un pedido (antes era `/orders/view/{id}`)
+- `GET /tickets/show/{id}` - Ver detalles de un ticket (antes era `/tickets/view/{id}`)
+
 ## 📝 Licencia
 
 Este proyecto es de código abierto y está disponible bajo la licencia MIT.

@@ -43,7 +43,7 @@ class OrdersController extends BaseController {
         ]);
     }
     
-    public function view($id) {
+    public function show($id) {
         // Placeholder for order details
         $this->view('orders/view', [
             'title' => 'Detalles del Pedido',
