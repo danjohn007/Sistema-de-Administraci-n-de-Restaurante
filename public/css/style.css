@@ -1,0 +1,256 @@
+/* Custom styles for restaurant system */
+body {
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.75rem;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+    font-weight: 600;
+}
+
+.btn {
+    border-radius: 0.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: 0.5rem;
+}
+
+/* Login page styles */
+.login-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+/* Table status badges */
+.table-status {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+}
+
+.status-disponible {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-ocupada {
+    background-color: #dc3545;
+    color: white;
+}
+
+.status-cuenta_solicitada {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-cerrada {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Order status badges */
+.order-status {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+}
+
+.status-pendiente {
+    background-color: #6c757d;
+    color: white;
+}
+
+.status-en_preparacion {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.status-listo {
+    background-color: #20c997;
+    color: white;
+}
+
+.status-entregado {
+    background-color: #28a745;
+    color: white;
+}
+
+/* Dashboard cards */
+.dashboard-card {
+    transition: transform 0.2s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.stat-card {
+    border-left: 4px solid;
+}
+
+.stat-card.primary {
+    border-left-color: #007bff;
+}
+
+.stat-card.success {
+    border-left-color: #28a745;
+}
+
+.stat-card.warning {
+    border-left-color: #ffc107;
+}
+
+.stat-card.danger {
+    border-left-color: #dc3545;
+}
+
+/* Tables grid */
+.tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.table-card {
+    border: 2px solid #e9ecef;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.table-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.table-card.disponible {
+    border-color: #28a745;
+    background-color: #f8fff9;
+}
+
+.table-card.ocupada {
+    border-color: #dc3545;
+    background-color: #fef8f8;
+}
+
+.table-card.cuenta_solicitada {
+    border-color: #ffc107;
+    background-color: #fffbf0;
+}
+
+.table-card.cerrada {
+    border-color: #6c757d;
+    background-color: #f8f9fa;
+}
+
+/* Menu grid */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.dish-card {
+    border: none;
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.dish-card:hover {
+    transform: translateY(-2px);
+}
+
+.dish-price {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #28a745;
+}
+
+/* Order form */
+.order-summary {
+    position: sticky;
+    top: 2rem;
+}
+
+.order-item {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.order-item:last-child {
+    border-bottom: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tables-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .menu-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Print styles */
+@media print {
+    .navbar, .btn, .no-print {
+        display: none !important;
+    }
+    
+    .container {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}
+
+/* Loading spinner */
+.spinner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.spinner-border-lg {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Custom form validation */
+.was-validated .form-control:invalid {
+    border-color: #dc3545;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+}
