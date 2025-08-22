@@ -67,17 +67,17 @@ cd Sistema-de-Administraci-n-de-Restaurante
 ### 2. Configurar Base de Datos
 1. Crear una base de datos MySQL:
 ```sql
-CREATE DATABASE restaurante_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE ejercito_restaurant CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 2. Importar el esquema de la base de datos:
 ```bash
-mysql -u tu_usuario -p restaurante_db < database/schema.sql
+mysql -u ejercito_restaurant -p ejercito_restaurant < database/schema.sql
 ```
 
 3. Importar los datos de ejemplo:
 ```bash
-mysql -u tu_usuario -p restaurante_db < database/sample_data.sql
+mysql -u ejercito_restaurant -p ejercito_restaurant < database/sample_data.sql
 ```
 
 ### 3. Configurar Conexión a Base de Datos
@@ -86,12 +86,25 @@ Editar el archivo `config/config.php` y actualizar las credenciales:
 ```php
 // Database configuration
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'restaurante_db');
-define('DB_USER', 'tu_usuario');
-define('DB_PASS', 'tu_contraseña');
+define('DB_NAME', 'ejercito_restaurant');
+define('DB_USER', 'ejercito_restaurant');
+define('DB_PASS', 'Danjohn007!');
 ```
 
-### 4. Configurar Apache
+### 4. Configurar URL Base
+El sistema está configurado para funcionar en la URL:
+```
+https://ejercitodigital.com.mx/restaurante/sistema/
+```
+
+Si necesitas cambiar la URL base, edita el archivo `index.php`:
+```php
+// Define base path for the application
+define('BASE_PATH', __DIR__);
+define('BASE_URL', 'https://ejercitodigital.com.mx/restaurante/sistema');
+```
+
+### 5. Configurar Apache
 
 #### Opción A: Directorio Raíz del Servidor
 Si instalas en la raíz de tu servidor web (`/var/www/html/` en Linux o `htdocs/` en XAMPP):
@@ -123,7 +136,7 @@ Si instalas en un subdirectorio (`/var/www/html/restaurante/`):
 
 3. Acceder mediante: `http://restaurante.local/`
 
-### 5. Verificar Instalación
+### 6. Verificar Instalación
 1. Navega a la URL configurada
 2. Deberías ver la página de login
 3. Usa las credenciales de prueba (ver sección "Usuarios de Prueba")
@@ -138,6 +151,40 @@ El sistema incluye usuarios predefinidos para testing:
 | Cajero | cajero@restaurante.com | 123456 | Gestión de tickets y cobros |
 | Mesero | mesero1@restaurante.com | 123456 | Juan Pérez - Código MES001 |
 | Mesero | mesero2@restaurante.com | 123456 | Ana López - Código MES002 |
+
+### Crear Usuarios Adicionales
+
+Para crear nuevos usuarios con contraseñas hasheadas correctamente, utiliza el siguiente código PHP:
+
+```php
+// Ejemplo para crear un usuario administrador
+$password = password_hash('123456', PASSWORD_DEFAULT);
+
+// SQL para insertar el usuario
+$sql = "INSERT INTO users (email, password, name, role, active) VALUES (?, ?, ?, ?, 1)";
+$stmt = $pdo->prepare($sql);
+$stmt->execute([
+    'nuevo@restaurante.com',
+    $password,
+    'Nombre del Usuario',
+    'administrador' // o 'mesero', 'cajero'
+]);
+```
+
+O ejecuta directamente en MySQL:
+```sql
+-- Crear usuario administrador con contraseña "123456"
+INSERT INTO users (email, password, name, role, active) VALUES 
+('admin@ejercito.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin Ejercito', 'administrador', 1);
+
+-- Crear usuario cajero con contraseña "123456"  
+INSERT INTO users (email, password, name, role, active) VALUES 
+('cajero@ejercito.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Cajero Ejercito', 'cajero', 1);
+
+-- Crear usuario mesero con contraseña "123456"
+INSERT INTO users (email, password, name, role, active) VALUES 
+('mesero@ejercito.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Mesero Ejercito', 'mesero', 1);
+```
 
 ## 🗂️ Estructura del Proyecto
 
