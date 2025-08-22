@@ -355,7 +355,7 @@
                             </a>
                         </div>
                         <div class="col-md-2 mb-2">
-                            <a href="<?= BASE_URL ?>/auth/register" class="btn btn-outline-dark w-100">
+                            <a href="<?= BASE_URL ?>/users/create" class="btn btn-outline-dark w-100">
                                 <i class="bi bi-person-plus"></i><br>Nuevo Usuario
                             </a>
                         </div>
