@@ -94,5 +94,78 @@ class ProfileController extends BaseController {
         
         return $errors;
     }
+    
+    public function changePassword() {
+        $user = $this->getCurrentUser();
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->processChangePassword($user['id']);
+        } else {
+            $userData = $this->userModel->find($user['id']);
+            
+            if (!$userData) {
+                $this->redirect('dashboard', 'error', 'Usuario no encontrado');
+                return;
+            }
+            
+            $this->view('profile/change_password', [
+                'user' => $userData
+            ]);
+        }
+    }
+    
+    private function processChangePassword($userId) {
+        $errors = $this->validatePasswordInput($_POST);
+        
+        if (!empty($errors)) {
+            $userData = $this->userModel->find($userId);
+            $this->view('profile/change_password', [
+                'errors' => $errors,
+                'user' => $userData
+            ]);
+            return;
+        }
+        
+        // Verify current password
+        $userData = $this->userModel->find($userId);
+        if (!password_verify($_POST['current_password'], $userData['password'])) {
+            $userData = $this->userModel->find($userId);
+            $this->view('profile/change_password', [
+                'errors' => ['current_password' => 'La contraseña actual es incorrecta'],
+                'user' => $userData
+            ]);
+            return;
+        }
+        
+        try {
+            $success = $this->userModel->updatePassword($userId, $_POST['password']);
+            
+            if ($success) {
+                $this->redirect('profile', 'success', 'Contraseña actualizada correctamente');
+            } else {
+                throw new Exception('Error al actualizar la contraseña');
+            }
+        } catch (Exception $e) {
+            $userData = $this->userModel->find($userId);
+            $this->view('profile/change_password', [
+                'error' => 'Error al actualizar la contraseña: ' . $e->getMessage(),
+                'user' => $userData
+            ]);
+        }
+    }
+    
+    private function validatePasswordInput($data) {
+        $errors = $this->validateInput($data, [
+            'current_password' => ['required' => true],
+            'password' => ['required' => true, 'min' => 6],
+            'password_confirmation' => ['required' => true]
+        ]);
+        
+        if (($_POST['password'] ?? '') !== ($_POST['password_confirmation'] ?? '')) {
+            $errors['password_confirmation'] = 'Las contraseñas no coinciden';
+        }
+        
+        return $errors;
+    }
 }
 ?>

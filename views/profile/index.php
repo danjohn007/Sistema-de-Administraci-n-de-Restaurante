@@ -74,7 +74,7 @@
                     <a href="<?= BASE_URL ?>/profile/edit" class="btn btn-outline-primary">
                         <i class="bi bi-pencil"></i> Editar Perfil
                     </a>
-                    <a href="<?= BASE_URL ?>/auth/changePassword" class="btn btn-outline-warning">
+                    <a href="<?= BASE_URL ?>/profile/changePassword" class="btn btn-outline-warning">
                         <i class="bi bi-key"></i> Cambiar Contraseña
                     </a>
                     <a href="<?= BASE_URL ?>/dashboard" class="btn btn-outline-secondary">
