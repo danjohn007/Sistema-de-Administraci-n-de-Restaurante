@@ -204,40 +204,11 @@ class TicketsController extends BaseController {
     }
     
     private function getOrdersReadyForTicket() {
-        $query = "SELECT o.*, t.number as table_number, 
-                         u.name as waiter_name, w.employee_code
-                  FROM orders o
-                  JOIN tables t ON o.table_id = t.id
-                  JOIN waiters w ON o.waiter_id = w.id
-                  JOIN users u ON w.user_id = u.id
-                  LEFT JOIN tickets tk ON o.id = tk.order_id
-                  WHERE o.status = ? AND tk.id IS NULL
-                  ORDER BY o.created_at ASC";
-        
-        $stmt = $this->orderModel->db->prepare($query);
-        $stmt->execute([ORDER_READY]);
-        
-        return $stmt->fetchAll();
+        return $this->orderModel->getOrdersReadyForTicket();
     }
     
     private function getSalesReportData($startDate, $endDate) {
-        $query = "SELECT 
-                    DATE(t.created_at) as date,
-                    COUNT(*) as total_tickets,
-                    SUM(t.subtotal) as total_subtotal,
-                    SUM(t.tax) as total_tax,
-                    SUM(t.total) as total_amount,
-                    t.payment_method,
-                    COUNT(*) as method_count
-                  FROM tickets t
-                  WHERE DATE(t.created_at) BETWEEN ? AND ?
-                  GROUP BY DATE(t.created_at), t.payment_method
-                  ORDER BY DATE(t.created_at) DESC, t.payment_method";
-        
-        $stmt = $this->ticketModel->db->prepare($query);
-        $stmt->execute([$startDate, $endDate]);
-        
-        return $stmt->fetchAll();
+        return $this->ticketModel->getSalesReportData($startDate, $endDate);
     }
 }
 ?>

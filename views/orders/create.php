@@ -55,7 +55,13 @@
                                 name="waiter_id" 
                                 required>
                             <option value="">Seleccionar mesero...</option>
-                            <!-- This would be populated from a waiter list -->
+                            <?php foreach ($waiters as $waiter): ?>
+                                <option value="<?= $waiter['id'] ?>" 
+                                        <?= (($old['waiter_id'] ?? '') == $waiter['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($waiter['name']) ?> 
+                                    (<?= htmlspecialchars($waiter['employee_code']) ?>)
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                         <?php if (isset($errors['waiter_id'])): ?>
                             <div class="invalid-feedback">

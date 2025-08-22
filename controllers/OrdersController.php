@@ -55,9 +55,16 @@ class OrdersController extends BaseController {
             
             $dishes = $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC');
             
+            // Get waiters for admin role
+            $waiters = [];
+            if ($user['role'] === ROLE_ADMIN) {
+                $waiters = $this->waiterModel->getWaitersWithUsers();
+            }
+            
             $this->view('orders/create', [
                 'tables' => $tables,
                 'dishes' => $dishes,
+                'waiters' => $waiters,
                 'user' => $user
             ]);
         }
@@ -207,11 +214,19 @@ class OrdersController extends BaseController {
         $errors = $this->validateOrderInput($_POST);
         
         if (!empty($errors)) {
+            $user = $this->getCurrentUser();
+            $waiters = [];
+            if ($user['role'] === ROLE_ADMIN) {
+                $waiters = $this->waiterModel->getWaitersWithUsers();
+            }
+            
             $this->view('orders/create', [
                 'errors' => $errors,
                 'old' => $_POST,
                 'tables' => $this->tableModel->findAll(['active' => 1], 'number ASC'),
-                'dishes' => $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC')
+                'dishes' => $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC'),
+                'waiters' => $waiters,
+                'user' => $user
             ]);
             return;
         }
@@ -251,11 +266,19 @@ class OrdersController extends BaseController {
         }
         
         if (empty($items)) {
+            $user = $this->getCurrentUser();
+            $waiters = [];
+            if ($user['role'] === ROLE_ADMIN) {
+                $waiters = $this->waiterModel->getWaitersWithUsers();
+            }
+            
             $this->view('orders/create', [
                 'errors' => ['items' => 'Debe agregar al menos un platillo al pedido'],
                 'old' => $_POST,
                 'tables' => $this->tableModel->findAll(['active' => 1], 'number ASC'),
-                'dishes' => $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC')
+                'dishes' => $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC'),
+                'waiters' => $waiters,
+                'user' => $user
             ]);
             return;
         }
@@ -268,11 +291,19 @@ class OrdersController extends BaseController {
             
             $this->redirect('orders/show/' . $orderId, 'success', 'Pedido creado correctamente');
         } catch (Exception $e) {
+            $user = $this->getCurrentUser();
+            $waiters = [];
+            if ($user['role'] === ROLE_ADMIN) {
+                $waiters = $this->waiterModel->getWaitersWithUsers();
+            }
+            
             $this->view('orders/create', [
                 'error' => 'Error al crear el pedido: ' . $e->getMessage(),
                 'old' => $_POST,
                 'tables' => $this->tableModel->findAll(['active' => 1], 'number ASC'),
-                'dishes' => $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC')
+                'dishes' => $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC'),
+                'waiters' => $waiters,
+                'user' => $user
             ]);
         }
     }

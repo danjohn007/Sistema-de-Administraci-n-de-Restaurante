@@ -192,5 +192,22 @@ class Order extends BaseModel {
         
         return $stmt->fetch();
     }
+    
+    public function getOrdersReadyForTicket() {
+        $query = "SELECT o.*, t.number as table_number, 
+                         u.name as waiter_name, w.employee_code
+                  FROM {$this->table} o
+                  JOIN tables t ON o.table_id = t.id
+                  JOIN waiters w ON o.waiter_id = w.id
+                  JOIN users u ON w.user_id = u.id
+                  LEFT JOIN tickets tk ON o.id = tk.order_id
+                  WHERE o.status = ? AND tk.id IS NULL
+                  ORDER BY o.created_at ASC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([ORDER_READY]);
+        
+        return $stmt->fetchAll();
+    }
 }
 ?>
