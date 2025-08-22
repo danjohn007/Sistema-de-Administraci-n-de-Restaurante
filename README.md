@@ -5,23 +5,38 @@ Un sistema completo de administración para restaurantes desarrollado en PHP pur
 ## 🚀 Características Principales
 
 ### Gestión de Usuarios y Roles
-- **Administrador**: Acceso total al sistema (gestiona mesas, meseros y platillos)
+- **Administrador**: Acceso total al sistema (gestiona usuarios, mesas, meseros y platillos)
 - **Mesero**: Toma pedidos y los asigna a las mesas
 - **Cajero**: Genera tickets y realiza cobros
 - Control de permisos por rol
 - Autenticación segura con hashing de contraseñas
+- CRUD completo de usuarios con filtros por rol
+- Cambio de contraseñas por administrador
 
 ### Gestión de Mesas
 - Alta, baja y modificación de mesas
 - Estados: disponible, ocupada, cuenta solicitada, cerrada
 - Asignación de mesero a cada mesa
 - Vista gráfica del estado de las mesas
+- Estadísticas en tiempo real de ocupación
+- Validaciones de negocio para cambios de estado
 
 ### Gestión de Meseros
-- Registro de meseros con códigos de empleado
+- Registro de meseros con códigos de empleado únicos
 - Asignación de pedidos y mesas específicos
 - Historial de pedidos por mesero
 - Estadísticas de rendimiento
+- Sistema integrado de usuarios (cada mesero tiene credenciales de acceso)
+- Asignación múltiple y dinámica de mesas
+
+### Menú y Gestión de Platillos
+- CRUD completo de platillos del menú
+- Organización por categorías personalizables
+- Gestión avanzada de categorías (crear, renombrar, eliminar)
+- Precios con validación y formato monetario
+- Descripciones detalladas opcionales
+- Búsqueda y filtrado por categoría
+- Estadísticas de popularidad de platillos
 
 ### Menú y Pedidos
 - Administración completa de platillos (alta, baja, edición, precios)
@@ -275,16 +290,41 @@ Sistema-de-Administraci-n-de-Restaurante/
 
 El sistema utiliza URLs amigables:
 
+### Autenticación
 - `/` - Página de login
-- `/dashboard` - Dashboard principal
-- `/tables` - Gestión de mesas
-- `/waiters` - Gestión de meseros
-- `/dishes` - Gestión de menú
-- `/orders` - Gestión de pedidos
-- `/tickets` - Gestión de tickets
 - `/auth/login` - Login
 - `/auth/logout` - Logout
 - `/auth/changePassword` - Cambiar contraseña
+
+### Panel Principal
+- `/dashboard` - Dashboard principal
+
+### Administración (Solo Administradores)
+- `/users` - Gestión de usuarios
+  - `/users/create` - Crear usuario
+  - `/users/edit/{id}` - Editar usuario
+  - `/users/delete/{id}` - Eliminar usuario
+  - `/users/changePassword/{id}` - Cambiar contraseña de usuario
+- `/waiters` - Gestión de meseros
+  - `/waiters/create` - Crear mesero
+  - `/waiters/edit/{id}` - Editar mesero
+  - `/waiters/delete/{id}` - Eliminar mesero
+  - `/waiters/assignTables/{id}` - Asignar mesas a mesero
+- `/tables` - Gestión de mesas
+  - `/tables/create` - Crear mesa
+  - `/tables/edit/{id}` - Editar mesa
+  - `/tables/delete/{id}` - Eliminar mesa
+  - `/tables/changeStatus/{id}` - Cambiar estado de mesa
+- `/dishes` - Gestión de menú
+  - `/dishes/create` - Crear platillo
+  - `/dishes/edit/{id}` - Editar platillo
+  - `/dishes/delete/{id}` - Eliminar platillo
+  - `/dishes/view/{id}` - Ver detalles del platillo
+  - `/dishes/categories` - Gestionar categorías
+
+### Operaciones
+- `/orders` - Gestión de pedidos
+- `/tickets` - Gestión de tickets
 
 ## 🔧 Personalización
 
