@@ -64,18 +64,6 @@
                                 </button>
                             </div>
                         </form>
-                        
-                        <hr class="my-4">
-                        
-                        <div class="text-center">
-                            <small class="text-muted">
-                                <strong>Usuarios de prueba:</strong><br>
-                                Admin: admin@restaurante.com<br>
-                                Cajero: cajero@restaurante.com<br>
-                                Mesero: mesero1@restaurante.com<br>
-                                <em>Contraseña para todos: 123456</em>
-                            </small>
-                        </div>
                     </div>
                 </div>
             </div>

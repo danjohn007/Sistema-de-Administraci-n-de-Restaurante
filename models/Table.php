@@ -99,5 +99,9 @@ class Table extends BaseModel {
         
         return $stmt->fetch() !== false;
     }
+    
+    public function getWaiterTables($waiterId) {
+        return $this->findAll(['waiter_id' => $waiterId, 'active' => 1], 'number ASC');
+    }
 }
 ?>
