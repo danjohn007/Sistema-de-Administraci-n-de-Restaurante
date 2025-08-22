@@ -3,7 +3,7 @@ session_start();
 
 // Define base path for the application
 define('BASE_PATH', __DIR__);
-define('BASE_URL', 'https://ejercitodigital.com.mx/restaurante/sistema');
+define('BASE_URL', 'https://ejercitodigital.com.mx/restaurante/');
 
 // Include configuration
 require_once BASE_PATH . '/config/config.php';
