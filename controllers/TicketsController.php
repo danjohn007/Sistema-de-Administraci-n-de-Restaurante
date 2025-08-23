@@ -47,11 +47,11 @@ class TicketsController extends BaseController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->processCreate();
         } else {
-            // Get orders that are ready and don't have tickets yet
-            $readyOrders = $this->getOrdersReadyForTicket();
+            // Get ready orders grouped by table
+            $tablesWithReadyOrders = $this->orderModel->getReadyOrdersGroupedByTable();
             
             $this->view('tickets/create', [
-                'orders' => $readyOrders,
+                'tables' => $tablesWithReadyOrders,
                 'user' => $user
             ]);
         }
@@ -146,35 +146,55 @@ class TicketsController extends BaseController {
         $errors = $this->validateTicketInput($_POST);
         
         if (!empty($errors)) {
-            $readyOrders = $this->getOrdersReadyForTicket();
+            $tablesWithReadyOrders = $this->orderModel->getReadyOrdersGroupedByTable();
             $this->view('tickets/create', [
                 'errors' => $errors,
                 'old' => $_POST,
-                'orders' => $readyOrders
+                'tables' => $tablesWithReadyOrders
             ]);
             return;
         }
         
         $user = $this->getCurrentUser();
-        $orderId = $_POST['order_id'];
         $paymentMethod = $_POST['payment_method'] ?? 'efectivo';
         
         try {
-            $ticketId = $this->ticketModel->createTicket($orderId, $user['id'], $paymentMethod);
+            // Check if we're creating a ticket for multiple orders or single order
+            if (isset($_POST['table_id'])) {
+                // Multiple orders from a table
+                $tableId = $_POST['table_id'];
+                
+                // Get all ready orders for this table
+                $readyOrders = $this->orderModel->getOrdersReadyForTicket();
+                $tableOrders = array_filter($readyOrders, function($order) use ($tableId) {
+                    return $order['table_id'] == $tableId;
+                });
+                
+                if (empty($tableOrders)) {
+                    throw new Exception('No hay pedidos listos para esta mesa');
+                }
+                
+                $orderIds = array_map(function($order) { return $order['id']; }, $tableOrders);
+                $ticketId = $this->ticketModel->createTicketFromMultipleOrders($orderIds, $user['id'], $paymentMethod);
+            } else {
+                // Single order (backward compatibility)
+                $orderId = $_POST['order_id'];
+                $ticketId = $this->ticketModel->createTicket($orderId, $user['id'], $paymentMethod);
+            }
+            
             $this->redirect('tickets/show/' . $ticketId, 'success', 'Ticket generado correctamente');
         } catch (Exception $e) {
-            $readyOrders = $this->getOrdersReadyForTicket();
+            $tablesWithReadyOrders = $this->orderModel->getReadyOrdersGroupedByTable();
             $this->view('tickets/create', [
                 'error' => 'Error al generar el ticket: ' . $e->getMessage(),
                 'old' => $_POST,
-                'orders' => $readyOrders
+                'tables' => $tablesWithReadyOrders
             ]);
         }
     }
     
     private function validateTicketInput($data) {
         $errors = $this->validateInput($data, [
-            'order_id' => ['required' => true],
             'payment_method' => ['required' => true]
         ]);
         
@@ -184,7 +204,27 @@ class TicketsController extends BaseController {
             $errors['payment_method'] = 'Método de pago inválido';
         }
         
-        // Validate that order exists and is ready
+        // Validate that either table_id or order_id is provided
+        if (empty($data['table_id']) && empty($data['order_id'])) {
+            $errors['selection'] = 'Debe seleccionar una mesa o un pedido para generar el ticket';
+        }
+        
+        // Validate table selection (for multiple orders)
+        if (!empty($data['table_id'])) {
+            $tableId = $data['table_id'];
+            
+            // Check that the table has ready orders
+            $readyOrders = $this->orderModel->getOrdersReadyForTicket();
+            $tableOrders = array_filter($readyOrders, function($order) use ($tableId) {
+                return $order['table_id'] == $tableId;
+            });
+            
+            if (empty($tableOrders)) {
+                $errors['table_id'] = 'La mesa seleccionada no tiene pedidos listos para generar ticket';
+            }
+        }
+        
+        // Validate single order selection (backward compatibility)
         if (!empty($data['order_id'])) {
             $order = $this->orderModel->find($data['order_id']);
             if (!$order) {
