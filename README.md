@@ -40,6 +40,28 @@ Un sistema completo de administración para restaurantes desarrollado en PHP pur
 - **Gestión por Roles**:
   - Cajeros: Pueden generar tickets y ver sus propias transacciones
   - Administradores: Acceso completo con reportes avanzados
+
+### Módulo Financiero (NUEVO)
+- **Corte de Caja**:
+  - Registro por rango de fechas y turnos de venta
+  - Cálculo automático de ingresos, egresos y utilidad neta
+  - Historial detallado de cortes realizados
+- **Gestión de Retiros**:
+  - Registro de retiros con evidencia adjunta
+  - Sistema de autorización por administradores
+  - Seguimiento de responsables
+- **Gastos por Categoría**:
+  - Categorías personalizables con colores
+  - Registro de gastos con comprobantes
+  - Reportes y estadísticas por categoría
+- **Gestión de Sucursales**:
+  - Registro y administración de múltiples sucursales
+  - Asignación de personal por sucursal
+  - Reportes segmentados por ubicación
+- **Dashboard Financiero**:
+  - Vista consolidada de gastos, retiros y cortes
+  - Gráficos y estadísticas en tiempo real
+  - Filtros por fechas y sucursales
 - **Numeración Automática**: Tickets con formato único (TYYYYMMDDNNNN)
 - **Compatibilidad**: Mantiene soporte para tickets de pedidos individuales
 
@@ -256,13 +278,15 @@ Sistema-de-Administraci-n-de-Restaurante/
 │   ├── WaiterController.php    # Gestión de meseros
 │   ├── DishController.php      # Gestión de menú
 │   ├── OrderController.php     # Gestión de pedidos
-│   └── TicketController.php    # Gestión de tickets
+│   ├── TicketController.php    # Gestión de tickets
+│   └── FinancialController.php # Gestión financiera (NUEVO)
 ├── core/
 │   ├── BaseController.php  # Controlador base
 │   └── BaseModel.php       # Modelo base
 ├── database/
 │   ├── schema.sql          # Esquema de base de datos
-│   └── sample_data.sql     # Datos de ejemplo
+│   ├── sample_data.sql     # Datos de ejemplo
+│   └── financial_module.sql # Esquema del módulo financiero (NUEVO)
 ├── models/
 │   ├── User.php           # Modelo de usuarios
 │   ├── Table.php          # Modelo de mesas
@@ -270,7 +294,12 @@ Sistema-de-Administraci-n-de-Restaurante/
 │   ├── Dish.php           # Modelo de platillos
 │   ├── Order.php          # Modelo de pedidos
 │   ├── OrderItem.php      # Modelo de items de pedido
-│   └── Ticket.php         # Modelo de tickets
+│   ├── Ticket.php         # Modelo de tickets
+│   ├── Branch.php         # Modelo de sucursales (NUEVO)
+│   ├── ExpenseCategory.php # Modelo de categorías de gastos (NUEVO)
+│   ├── Expense.php        # Modelo de gastos (NUEVO)
+│   ├── CashWithdrawal.php # Modelo de retiros (NUEVO)
+│   └── CashClosure.php    # Modelo de cortes de caja (NUEVO)
 ├── public/
 │   ├── css/
 │   │   └── style.css      # Estilos personalizados
@@ -360,6 +389,25 @@ El sistema utiliza URLs amigables:
   - `/tables/edit/{id}` - Editar mesa
   - `/tables/delete/{id}` - Eliminar mesa
   - `/tables/changeStatus/{id}` - Cambiar estado de mesa
+
+### Módulo Financiero (Administradores y Cajeros)
+- `/financial` - Dashboard financiero
+- `/financial/expenses` - Gestión de gastos
+  - `/financial/createExpense` - Registrar nuevo gasto
+  - `/financial/viewExpense/{id}` - Ver detalles de gasto
+- `/financial/withdrawals` - Gestión de retiros
+  - `/financial/createWithdrawal` - Registrar nuevo retiro
+  - `/financial/authorizeWithdrawal/{id}` - Autorizar retiro (solo admin)
+- `/financial/closures` - Cortes de caja
+  - `/financial/createClosure` - Realizar corte de caja
+  - `/financial/viewClosure/{id}` - Ver detalles de corte
+
+### Gestión de Sucursales (Solo Administradores)
+- `/financial/branches` - Gestión de sucursales
+  - `/financial/createBranch` - Crear sucursal
+  - `/financial/viewBranch/{id}` - Ver detalles de sucursal
+- `/financial/categories` - Gestión de categorías
+  - `/financial/createCategory` - Crear categoría de gastos
 - `/dishes` - Gestión de menú
   - `/dishes/create` - Crear platillo
   - `/dishes/edit/{id}` - Editar platillo
@@ -429,6 +477,49 @@ Edita `public/css/style.css` para:
 3. Verificar que los archivos JS están accesibles
 
 ## 📋 Changelog
+
+### v1.3.0 - 2024-12-23
+
+#### Nuevo Módulo Financiero (Completamente Implementado)
+- **Gestión de Gastos**: 
+  - Registro de gastos por categorías personalizables
+  - Carga de comprobantes y evidencias
+  - Filtros por fecha, categoría y sucursal
+  - Reportes detallados y estadísticas
+- **Retiros de Dinero**:
+  - Registro de retiros con evidencia
+  - Sistema de autorización por administradores
+  - Seguimiento de responsables y montos
+  - Control por sucursales
+- **Corte de Caja**:
+  - Cálculo automático de utilidad neta
+  - Registro por turnos y fechas específicas
+  - Integración con ventas, gastos y retiros
+  - Historial completo de cortes
+- **Gestión de Sucursales**:
+  - Registro y administración de múltiples sucursales
+  - Asignación de personal por ubicación
+  - Reportes segmentados por sucursal
+  - Control de permisos por sucursal
+- **Categorías de Gastos**:
+  - Categorías personalizables con colores
+  - Estadísticas por categoría
+  - Distribución visual de gastos
+- **Dashboard Financiero**:
+  - Vista consolidada de actividad financiera
+  - Gráficos y métricas en tiempo real
+  - Acciones rápidas para operaciones comunes
+
+#### Mejoras en Navegación y Permisos
+- **Menú Financiero**: Nuevo menú para cajeros y administradores
+- **Control de Acceso**: Permisos específicos para módulo financiero
+- **Integración**: Mantenimiento de compatibilidad con módulos existentes
+
+#### Base de Datos
+- **Nuevas Tablas**: branches, expense_categories, expenses, cash_withdrawals, cash_closures, branch_staff
+- **Relaciones**: Integración con usuarios y sistema existente
+- **Índices**: Optimización para consultas frecuentes
+- **Migración**: Script SQL completo para actualización
 
 ### v1.2.2 - 2024-12-22
 
@@ -596,6 +687,40 @@ Para soporte técnico o preguntas:
 - Verificar los logs de error de Apache/PHP
 
 ## 🔄 Actualizaciones
+
+### Instalación del Módulo Financiero (v1.3.0)
+
+Para instalar el nuevo módulo financiero en una instalación existente:
+
+1. **Respaldar la base de datos**:
+   ```bash
+   mysqldump -u usuario -p ejercito_restaurant > backup_antes_financiero.sql
+   ```
+
+2. **Ejecutar el script de migración**:
+   ```sql
+   mysql -u usuario -p ejercito_restaurant < database/financial_module.sql
+   ```
+
+3. **Verificar nuevas tablas**:
+   - `branches` (sucursales)
+   - `expense_categories` (categorías de gastos)
+   - `expenses` (gastos)
+   - `cash_withdrawals` (retiros)
+   - `cash_closures` (cortes de caja)
+   - `branch_staff` (personal por sucursal)
+
+4. **Configurar permisos de archivos**:
+   ```bash
+   mkdir -p public/uploads/evidence
+   chmod 755 public/uploads/evidence
+   ```
+
+5. **Verificar acceso**:
+   - Cajeros: Acceso a dashboard, gastos, retiros y cortes
+   - Administradores: Acceso completo incluyendo categorías y sucursales
+
+### Mantenimiento General
 
 Para mantener el sistema actualizado:
 

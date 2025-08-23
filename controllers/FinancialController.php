@@ -543,5 +543,88 @@ class FinancialController extends BaseController {
         readfile($filePath);
         exit();
     }
+    
+    // ============= MÉTODOS DE ELIMINACIÓN Y AUTORIZACIÓN =============
+    
+    public function deleteExpense($id) {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        if ($this->expenseModel->deleteExpense($id)) {
+            $this->setFlashMessage('success', 'Gasto eliminado correctamente');
+        } else {
+            $this->setFlashMessage('error', 'Error al eliminar el gasto');
+        }
+        
+        $this->redirect('financial/expenses');
+    }
+    
+    public function authorizeWithdrawal($id) {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        $user = $this->getCurrentUser();
+        
+        if ($this->cashWithdrawalModel->authorizeWithdrawal($id, $user['id'])) {
+            $this->setFlashMessage('success', 'Retiro autorizado correctamente');
+        } else {
+            $this->setFlashMessage('error', 'Error al autorizar el retiro');
+        }
+        
+        $this->redirect('financial/withdrawals');
+    }
+    
+    public function deleteWithdrawal($id) {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        if ($this->cashWithdrawalModel->deleteWithdrawal($id)) {
+            $this->setFlashMessage('success', 'Retiro eliminado correctamente');
+        } else {
+            $this->setFlashMessage('error', 'Error al eliminar el retiro');
+        }
+        
+        $this->redirect('financial/withdrawals');
+    }
+    
+    public function deleteClosure($id) {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        if ($this->cashClosureModel->delete($id)) {
+            $this->setFlashMessage('success', 'Corte de caja eliminado correctamente');
+        } else {
+            $this->setFlashMessage('error', 'Error al eliminar el corte de caja');
+        }
+        
+        $this->redirect('financial/closures');
+    }
+    
+    public function deleteCategory($id) {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        // Verificar si tiene gastos asociados
+        $expensesCount = $this->expenseModel->count(['category_id' => $id]);
+        if ($expensesCount > 0) {
+            $this->setFlashMessage('error', 'No se puede eliminar la categoría porque tiene gastos asociados');
+            $this->redirect('financial/categories');
+        }
+        
+        if ($this->expenseCategoryModel->delete($id)) {
+            $this->setFlashMessage('success', 'Categoría eliminada correctamente');
+        } else {
+            $this->setFlashMessage('error', 'Error al eliminar la categoría');
+        }
+        
+        $this->redirect('financial/categories');
+    }
+    
+    public function deleteBranch($id) {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        if ($this->branchModel->delete($id)) {
+            $this->setFlashMessage('success', 'Sucursal eliminada correctamente');
+        } else {
+            $this->setFlashMessage('error', 'Error al eliminar la sucursal');
+        }
+        
+        $this->redirect('financial/branches');
+    }
 }
 ?>
