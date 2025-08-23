@@ -209,5 +209,42 @@ class Order extends BaseModel {
         
         return $stmt->fetchAll();
     }
+    
+    public function getReadyOrdersGroupedByTable() {
+        $query = "SELECT o.*, t.number as table_number, 
+                         u.name as waiter_name, w.employee_code
+                  FROM {$this->table} o
+                  JOIN tables t ON o.table_id = t.id
+                  JOIN waiters w ON o.waiter_id = w.id
+                  JOIN users u ON w.user_id = u.id
+                  LEFT JOIN tickets tk ON o.id = tk.order_id
+                  WHERE o.status = ? AND tk.id IS NULL
+                  ORDER BY o.table_id ASC, o.created_at ASC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([ORDER_READY]);
+        
+        $orders = $stmt->fetchAll();
+        
+        // Group orders by table
+        $groupedOrders = [];
+        foreach ($orders as $order) {
+            $tableId = $order['table_id'];
+            if (!isset($groupedOrders[$tableId])) {
+                $groupedOrders[$tableId] = [
+                    'table_id' => $tableId,
+                    'table_number' => $order['table_number'],
+                    'orders' => [],
+                    'total_amount' => 0,
+                    'order_count' => 0
+                ];
+            }
+            $groupedOrders[$tableId]['orders'][] = $order;
+            $groupedOrders[$tableId]['total_amount'] += $order['total'];
+            $groupedOrders[$tableId]['order_count']++;
+        }
+        
+        return array_values($groupedOrders);
+    }
 }
 ?>
