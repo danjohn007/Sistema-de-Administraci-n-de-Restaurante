@@ -60,7 +60,7 @@
                     
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
-                        <strong>Nueva funcionalidad:</strong> Ahora puedes generar un ticket que incluya todos los pedidos listos de una mesa en una sola factura.
+                        <strong>Nueva funcionalidad:</strong> Ahora puedes generar un ticket que incluya múltiples pedidos listos de una mesa en una sola factura.
                     </div>
                     
                     <div class="row">

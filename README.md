@@ -17,6 +17,7 @@ Un sistema completo de administración para restaurantes desarrollado en PHP pur
 ### Gestión de Pedidos (Completamente Implementado)
 - **Creación de Pedidos**: Interfaz intuitiva con selección de platillos del menú
 - **Estados de Pedido**: pendiente → en preparación → listo → entregado
+- **Cambio de Estado Corregido**: Los cambios de estado ahora afectan correctamente al pedido seleccionado
 - **Gestión por Roles**: 
   - Meseros: Pueden crear y gestionar sus propios pedidos
   - Administradores: Acceso completo a todos los pedidos
@@ -30,7 +31,9 @@ Un sistema completo de administración para restaurantes desarrollado en PHP pur
 
 ### Sistema de Tickets y Facturación (Completamente Implementado)
 - **Generación de Tickets**: Desde pedidos en estado "listo"
-- **Cálculo Automático**: Subtotal, IVA (16%) y total
+- **Nueva Funcionalidad**: Combinación de múltiples pedidos de la misma mesa en un solo ticket
+- **Selección Inteligente**: Interfaz que muestra mesas con pedidos listos agrupados
+- **Cálculo Automático**: Subtotal, IVA (16%) y total combinado de todos los pedidos
 - **Métodos de Pago**: Efectivo, tarjeta, transferencia
 - **Impresión**: Formato optimizado para tickets de punto de venta
 - **Reportes**: Ventas por fecha, método de pago y cajero
@@ -38,6 +41,7 @@ Un sistema completo de administración para restaurantes desarrollado en PHP pur
   - Cajeros: Pueden generar tickets y ver sus propias transacciones
   - Administradores: Acceso completo con reportes avanzados
 - **Numeración Automática**: Tickets con formato único (TYYYYMMDDNNNN)
+- **Compatibilidad**: Mantiene soporte para tickets de pedidos individuales
 
 ### Gestión de Mesas
 - Alta, baja y modificación de mesas
@@ -425,6 +429,28 @@ Edita `public/css/style.css` para:
 3. Verificar que los archivos JS están accesibles
 
 ## 📋 Changelog
+
+### v1.2.2 - 2024-12-22
+
+#### Nuevas Funcionalidades Implementadas
+- **Generación de Tickets para Múltiples Pedidos de la Misma Mesa**: 
+  - Ahora es posible combinar todos los pedidos listos de una mesa en un solo ticket
+  - Interfaz rediseñada que muestra mesas con pedidos listos en lugar de pedidos individuales
+  - Cálculo automático de subtotales combinados y aplicación de IVA al total
+  - Todos los pedidos de la mesa se marcan como "entregado" al generar el ticket
+  - Compatibilidad hacia atrás mantenida para tickets de pedidos individuales
+  - Rutas: `/tickets/create` (interfaz mejorada)
+
+#### Correcciones de Errores
+- **Corregido problema de cambio de estado de pedidos**: 
+  - Eliminados controladores duplicados que causaban conflictos de autoloading
+  - Los cambios de estado ahora afectan correctamente al pedido seleccionado
+  - Removidos controladores placeholder: OrderController, TicketController, DishController, etc.
+  - Mantenida consistencia en nomenclatura de controladores (plural)
+
+#### Rutas Principales Afectadas
+- `/tickets/create` - Nueva funcionalidad de selección por mesa con múltiples pedidos
+- `/orders/updateStatus/{id}` - Corregido funcionamiento de cambio de estado
 
 ### v1.2.1 - 2024-12-22
 
