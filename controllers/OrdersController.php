@@ -327,11 +327,31 @@ class OrdersController extends BaseController {
         }
         
         try {
+            // Update order notes
             $orderData = [
                 'notes' => $_POST['notes'] ?? null
             ];
             
             $this->orderModel->update($id, $orderData);
+            
+            // Process new items if any
+            if (isset($_POST['new_items']) && is_array($_POST['new_items'])) {
+                foreach ($_POST['new_items'] as $item) {
+                    if (isset($item['dish_id']) && isset($item['quantity']) && $item['quantity'] > 0) {
+                        $dish = $this->dishModel->find($item['dish_id']);
+                        if ($dish) {
+                            $this->orderModel->addItemToOrder(
+                                $id,
+                                $item['dish_id'],
+                                $item['quantity'],
+                                $dish['price'],
+                                $item['notes'] ?? null
+                            );
+                        }
+                    }
+                }
+            }
+            
             $this->redirect('orders/show/' . $id, 'success', 'Pedido actualizado correctamente');
         } catch (Exception $e) {
             $order = $this->orderModel->find($id);
