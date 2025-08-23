@@ -24,6 +24,16 @@ define('ROLE_ADMIN', 'administrador');
 define('ROLE_WAITER', 'mesero');
 define('ROLE_CASHIER', 'cajero');
 
+// Financial module constants
+define('UPLOAD_EVIDENCE_PATH', BASE_PATH . '/public/uploads/evidence/');
+define('ALLOWED_EVIDENCE_EXTENSIONS', ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx']);
+
+// Branch staff roles
+define('BRANCH_ROLE_MANAGER', 'gerente');
+define('BRANCH_ROLE_CASHIER', 'cajero');
+define('BRANCH_ROLE_WAITER', 'mesero');
+define('BRANCH_ROLE_COOK', 'cocinero');
+
 // Table statuses
 define('TABLE_AVAILABLE', 'disponible');
 define('TABLE_OCCUPIED', 'ocupada');

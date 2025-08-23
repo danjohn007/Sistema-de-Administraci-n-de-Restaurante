@@ -69,6 +69,34 @@
                             <i class="bi bi-receipt"></i> Tickets
                         </a>
                     </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-calculator"></i> Financiero
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/financial">
+                                <i class="bi bi-graph-up"></i> Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/financial/expenses">
+                                <i class="bi bi-credit-card"></i> Gastos
+                            </a></li>
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/financial/withdrawals">
+                                <i class="bi bi-cash-coin"></i> Retiros
+                            </a></li>
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/financial/closures">
+                                <i class="bi bi-journal-check"></i> Corte de Caja
+                            </a></li>
+                            <?php if ($_SESSION['user_role'] === ROLE_ADMIN): ?>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/financial/categories">
+                                <i class="bi bi-tags"></i> Categorías
+                            </a></li>
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/financial/branches">
+                                <i class="bi bi-building"></i> Sucursales
+                            </a></li>
+                            <?php endif; ?>
+                        </ul>
+                    </li>
                     <?php endif; ?>
                 </ul>
                 
