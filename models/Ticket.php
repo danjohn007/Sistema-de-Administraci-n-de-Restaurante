@@ -154,5 +154,25 @@ class Ticket extends BaseModel {
             'totals' => $totals
         ];
     }
+    
+    public function getSalesReportData($startDate, $endDate) {
+        $query = "SELECT 
+                    DATE(t.created_at) as date,
+                    COUNT(*) as total_tickets,
+                    SUM(t.subtotal) as total_subtotal,
+                    SUM(t.tax) as total_tax,
+                    SUM(t.total) as total_amount,
+                    t.payment_method,
+                    COUNT(*) as method_count
+                  FROM {$this->table} t
+                  WHERE DATE(t.created_at) BETWEEN ? AND ?
+                  GROUP BY DATE(t.created_at), t.payment_method
+                  ORDER BY DATE(t.created_at) DESC, t.payment_method";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$startDate, $endDate]);
+        
+        return $stmt->fetchAll();
+    }
 }
 ?>

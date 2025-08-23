@@ -426,6 +426,26 @@ Edita `public/css/style.css` para:
 
 ## 📋 Changelog
 
+### v1.2.1 - 2024-12-22
+
+#### Correcciones y Mejoras de Arquitectura
+- **Corregido acceso a propiedades protegidas**: Refactorizado TicketsController para usar métodos públicos
+  - Agregado método `getOrdersReadyForTicket()` en modelo Order
+  - Agregado método `getSalesReportData()` en modelo Ticket
+  - Eliminado acceso directo a propiedad `$db` protegida en controladores
+  - Mejorada encapsulación de datos siguiendo principios de POO
+
+- **Mejorada asignación de meseros en pedidos**: 
+  - Corregido formulario de creación de pedidos para mostrar lista de meseros disponibles
+  - Implementada selección de mesero en dropdown para usuarios administradores
+  - Validación correcta de asignación de mesero al crear pedidos
+  - Datos completos enviados a vistas en casos de error
+
+#### Rutas Principales Afectadas
+- `/orders/create` - Mejorada funcionalidad de asignación de mesero
+- `/tickets/create` - Optimizada consulta de pedidos listos
+- `/tickets/report` - Mejorada generación de reportes de ventas
+
 ### v1.2.0 - 2024-12-22
 
 #### Nuevas Características Implementadas
