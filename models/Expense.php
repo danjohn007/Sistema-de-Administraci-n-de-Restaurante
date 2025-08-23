@@ -25,6 +25,9 @@ class Expense extends BaseModel {
                 } elseif ($field === 'date_to') {
                     $whereClauses[] = "e.expense_date <= ?";
                     $params[] = $value;
+                } elseif ($field === 'limit') {
+                    // Skip 'limit' - it should not be part of WHERE clause
+                    continue;
                 } else {
                     $whereClauses[] = "e.{$field} = ?";
                     $params[] = $value;

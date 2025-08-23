@@ -22,6 +22,9 @@ class CashClosure extends BaseModel {
                 } elseif ($field === 'date_to') {
                     $whereClauses[] = "DATE(cc.shift_end) <= ?";
                     $params[] = $value;
+                } elseif ($field === 'limit') {
+                    // Skip 'limit' - it should not be part of WHERE clause
+                    continue;
                 } else {
                     $whereClauses[] = "cc.{$field} = ?";
                     $params[] = $value;

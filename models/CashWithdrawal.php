@@ -24,6 +24,9 @@ class CashWithdrawal extends BaseModel {
                 } elseif ($field === 'date_to') {
                     $whereClauses[] = "DATE(cw.withdrawal_date) <= ?";
                     $params[] = $value;
+                } elseif ($field === 'limit') {
+                    // Skip 'limit' - it should not be part of WHERE clause
+                    continue;
                 } else {
                     $whereClauses[] = "cw.{$field} = ?";
                     $params[] = $value;
