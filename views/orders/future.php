@@ -1,41 +1,38 @@
-<?php $title = 'Gestión de Pedidos'; ?>
+<?php $title = 'Pedidos Futuros'; ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="bi bi-clipboard-check"></i> 
-        <?= isset($showFuture) && $showFuture ? 'Pedidos Futuros' : 'Pedidos de Hoy' ?>
-    </h1>
+    <h1><i class="bi bi-calendar-plus"></i> Pedidos Futuros</h1>
     <div>
-        <?php if (!isset($showFuture) || !$showFuture): ?>
-        <a href="<?= BASE_URL ?>/orders?future=1" class="btn btn-info me-2">
-            <i class="bi bi-calendar-plus"></i> Pedidos Futuros
-        </a>
-        <?php else: ?>
         <a href="<?= BASE_URL ?>/orders" class="btn btn-secondary me-2">
             <i class="bi bi-calendar-day"></i> Pedidos de Hoy
         </a>
-        <?php endif; ?>
         <a href="<?= BASE_URL ?>/orders/create" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Nuevo Pedido
         </a>
     </div>
 </div>
 
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> 
+    Mostrando pedidos pickup programados para fechas futuras (después de hoy).
+</div>
+
 <?php if (empty($orders)): ?>
 <div class="card">
     <div class="card-body">
         <div class="text-center py-5">
-            <i class="bi bi-clipboard-check display-1 text-muted"></i>
-            <h3 class="mt-3">No hay pedidos registrados</h3>
+            <i class="bi bi-calendar-x display-1 text-muted"></i>
+            <h3 class="mt-3">No hay pedidos futuros</h3>
             <p class="text-muted">
                 <?php if ($user['role'] === ROLE_WAITER): ?>
-                    No tienes pedidos asignados <?= isset($showFuture) && $showFuture ? 'futuros' : 'para hoy' ?>.
+                    No tienes pedidos pickup programados para fechas futuras.
                 <?php else: ?>
-                    Aún no se han registrado pedidos <?= isset($showFuture) && $showFuture ? 'futuros' : 'para hoy' ?> en el sistema.
+                    No hay pedidos pickup programados para fechas futuras en el sistema.
                 <?php endif; ?>
             </p>
             <div class="mt-4">
-                <a href="<?= BASE_URL ?>/orders/create" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Crear Primer Pedido
+                <a href="<?= BASE_URL ?>/orders" class="btn btn-primary">
+                    <i class="bi bi-calendar-day"></i> Ver Pedidos de Hoy
                 </a>
                 <a href="<?= BASE_URL ?>/dashboard" class="btn btn-outline-secondary ms-2">
                     <i class="bi bi-arrow-left"></i> Volver al Dashboard
@@ -53,11 +50,11 @@
                     <tr>
                         <th>ID</th>
                         <th>Mesa</th>
-                        <th>Mesero/Cliente</th>
+                        <th>Cliente</th>
                         <th>Estado</th>
                         <th>Total</th>
                         <th>Items</th>
-                        <th>Fecha</th>
+                        <th>Fecha Pickup</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -69,21 +66,12 @@
                             <span class="badge bg-info">Mesa <?= $order['table_number'] ?></span>
                         </td>
                         <td>
-                            <?php if ($order['status'] === ORDER_PENDING_CONFIRMATION || !empty($order['customer_name'])): ?>
-                                <i class="bi bi-person-fill text-info"></i> 
-                                <small class="text-muted">Cliente:</small><br>
-                                <?= htmlspecialchars($order['customer_name'] ?? 'Público') ?>
-                                <?php if ($order['is_pickup'] ?? false): ?>
-                                    <br><span class="badge bg-info">Pickup</span>
-                                    <?php if (!empty($order['pickup_datetime'])): ?>
-                                        <br><small class="text-muted">
-                                            <?= date('d/m/Y H:i', strtotime($order['pickup_datetime'])) ?>
-                                        </small>
-                                    <?php endif; ?>
-                                <?php endif; ?>
-                            <?php else: ?>
-                                <small class="text-muted"><?= htmlspecialchars($order['employee_code'] ?? '') ?></small><br>
-                                <?= htmlspecialchars($order['waiter_name'] ?? 'Sin asignar') ?>
+                            <i class="bi bi-person-fill text-info"></i> 
+                            <small class="text-muted">Cliente:</small><br>
+                            <?= htmlspecialchars($order['customer_name'] ?? 'Público') ?>
+                            <br><span class="badge bg-warning">Pickup Futuro</span>
+                            <?php if (!empty($order['customer_phone'])): ?>
+                                <br><small class="text-muted"><?= htmlspecialchars($order['customer_phone']) ?></small>
                             <?php endif; ?>
                         </td>
                         <td>
@@ -98,15 +86,13 @@
                             <span class="badge bg-secondary"><?= $order['items_count'] ?> items</span>
                         </td>
                         <td>
-                            <small>
-                                <?php if ($order['is_pickup'] ?? false): ?>
-                                    Creado: <?= date('d/m/Y H:i', strtotime($order['created_at'])) ?>
-                                    <?php if (!empty($order['pickup_datetime'])): ?>
-                                        <br>Pickup: <?= date('d/m/Y H:i', strtotime($order['pickup_datetime'])) ?>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <?= date('d/m/Y H:i', strtotime($order['created_at'])) ?>
-                                <?php endif; ?>
+                            <strong><?= date('d/m/Y', strtotime($order['pickup_datetime'])) ?></strong>
+                            <br><small class="text-muted"><?= date('H:i', strtotime($order['pickup_datetime'])) ?></small>
+                            <br><small class="text-success">
+                                <?php 
+                                $days = floor((strtotime($order['pickup_datetime']) - time()) / (60 * 60 * 24));
+                                echo $days > 0 ? "En $days días" : "Hoy";
+                                ?>
                             </small>
                         </td>
                         <td>
@@ -149,10 +135,21 @@
 </div>
 <?php endif; ?>
 
-<!-- Quick Stats -->
+<!-- Quick Stats for Future Orders -->
 <div class="row mt-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center border-warning">
+            <div class="card-body">
+                <i class="bi bi-calendar-plus display-6 text-warning"></i>
+                <h6 class="mt-2">Total Futuros</h6>
+                <h4 class="text-warning">
+                    <?= count($orders) ?>
+                </h4>
+            </div>
+        </div>
+    </div>
     <?php if ($user['role'] === ROLE_ADMIN || $user['role'] === ROLE_CASHIER): ?>
-    <div class="col-md-2 col-sm-6 mb-3">
+    <div class="col-md-3 col-sm-6 mb-3">
         <div class="card text-center border-danger">
             <div class="card-body">
                 <i class="bi bi-exclamation-triangle display-6 text-danger"></i>
@@ -164,46 +161,29 @@
         </div>
     </div>
     <?php endif; ?>
-    <div class="col-md-2 col-sm-6 mb-3">
-        <div class="card text-center border-primary">
-            <div class="card-body">
-                <i class="bi bi-clock-history display-6 text-primary"></i>
-                <h6 class="mt-2">Pendientes</h6>
-                <h4 class="text-primary">
-                    <?= count(array_filter($orders, function($o) { return $o['status'] === ORDER_PENDING; })) ?>
-                </h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2 col-sm-6 mb-3">
-        <div class="card text-center border-warning">
-            <div class="card-body">
-                <i class="bi bi-gear display-6 text-warning"></i>
-                <h6 class="mt-2">En Preparación</h6>
-                <h4 class="text-warning">
-                    <?= count(array_filter($orders, function($o) { return $o['status'] === ORDER_PREPARING; })) ?>
-                </h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2 col-sm-6 mb-3">
+    <div class="col-md-3 col-sm-6 mb-3">
         <div class="card text-center border-success">
             <div class="card-body">
-                <i class="bi bi-check-circle display-6 text-success"></i>
-                <h6 class="mt-2">Listos</h6>
+                <i class="bi bi-currency-dollar display-6 text-success"></i>
+                <h6 class="mt-2">Ventas Futuras</h6>
                 <h4 class="text-success">
-                    <?= count(array_filter($orders, function($o) { return $o['status'] === ORDER_READY; })) ?>
+                    $<?= number_format(array_sum(array_column($orders, 'total')), 2) ?>
                 </h4>
             </div>
         </div>
     </div>
-    <div class="col-md-2 col-sm-6 mb-3">
+    <div class="col-md-3 col-sm-6 mb-3">
         <div class="card text-center border-info">
             <div class="card-body">
-                <i class="bi bi-truck display-6 text-info"></i>
-                <h6 class="mt-2">Entregados</h6>
+                <i class="bi bi-calendar-range display-6 text-info"></i>
+                <h6 class="mt-2">Días Cubiertos</h6>
                 <h4 class="text-info">
-                    <?= count(array_filter($orders, function($o) { return $o['status'] === ORDER_DELIVERED; })) ?>
+                    <?php 
+                    $dates = array_unique(array_map(function($order) {
+                        return date('Y-m-d', strtotime($order['pickup_datetime']));
+                    }, $orders));
+                    echo count($dates);
+                    ?>
                 </h4>
             </div>
         </div>
