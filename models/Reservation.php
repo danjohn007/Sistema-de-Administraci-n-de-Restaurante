@@ -3,12 +3,25 @@ class Reservation extends BaseModel {
     protected $table = 'reservations';
     
     public function getReservationsWithTables($filters = [], $orderBy = 'reservation_datetime ASC') {
-        $query = "SELECT r.*, t.number as table_number, t.capacity as table_capacity 
+        $query = "SELECT r.*, 
+                         w.employee_code as waiter_code,
+                         u.name as waiter_name,
+                         GROUP_CONCAT(DISTINCT t.number ORDER BY t.number ASC) as table_numbers,
+                         GROUP_CONCAT(DISTINCT CONCAT('Mesa ', t.number, ' (', t.capacity, ')') ORDER BY t.number ASC SEPARATOR ', ') as table_details,
+                         SUM(t.capacity) as total_capacity
                   FROM reservations r 
-                  JOIN tables t ON r.table_id = t.id 
+                  LEFT JOIN reservation_tables rt ON r.id = rt.reservation_id
+                  LEFT JOIN tables t ON rt.table_id = t.id
+                  LEFT JOIN waiters w ON r.waiter_id = w.id
+                  LEFT JOIN users u ON w.user_id = u.id
                   WHERE 1=1";
         
         $params = [];
+        
+        if (isset($filters['id'])) {
+            $query .= " AND r.id = ?";
+            $params[] = $filters['id'];
+        }
         
         if (isset($filters['status'])) {
             $query .= " AND r.status = ?";
@@ -21,11 +34,11 @@ class Reservation extends BaseModel {
         }
         
         if (isset($filters['table_id'])) {
-            $query .= " AND r.table_id = ?";
+            $query .= " AND rt.table_id = ?";
             $params[] = $filters['table_id'];
         }
         
-        $query .= " ORDER BY " . $orderBy;
+        $query .= " GROUP BY r.id ORDER BY " . $orderBy;
         
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
@@ -38,10 +51,19 @@ class Reservation extends BaseModel {
     }
     
     public function getFutureReservations() {
-        $query = "SELECT r.*, t.number as table_number, t.capacity as table_capacity 
+        $query = "SELECT r.*, 
+                         w.employee_code as waiter_code,
+                         u.name as waiter_name,
+                         GROUP_CONCAT(DISTINCT t.number ORDER BY t.number ASC) as table_numbers,
+                         GROUP_CONCAT(DISTINCT CONCAT('Mesa ', t.number, ' (', t.capacity, ')') ORDER BY t.number ASC SEPARATOR ', ') as table_details,
+                         SUM(t.capacity) as total_capacity
                   FROM reservations r 
-                  JOIN tables t ON r.table_id = t.id 
+                  LEFT JOIN reservation_tables rt ON r.id = rt.reservation_id
+                  LEFT JOIN tables t ON rt.table_id = t.id
+                  LEFT JOIN waiters w ON r.waiter_id = w.id
+                  LEFT JOIN users u ON w.user_id = u.id
                   WHERE r.reservation_datetime > NOW() 
+                  GROUP BY r.id 
                   ORDER BY r.reservation_datetime ASC";
         
         $stmt = $this->db->prepare($query);
@@ -50,17 +72,30 @@ class Reservation extends BaseModel {
         return $stmt->fetchAll();
     }
     
-    public function checkTableAvailability($tableId, $datetime, $excludeReservationId = null) {
-        $query = "SELECT COUNT(*) as count 
-                  FROM reservations 
-                  WHERE table_id = ? 
-                  AND status IN ('pendiente', 'confirmada') 
-                  AND ABS(TIMESTAMPDIFF(MINUTE, reservation_datetime, ?)) < 120"; // 2 hour buffer
+    public function checkTableAvailability($tableIds, $datetime, $excludeReservationId = null) {
+        // If it's a single table ID, convert to array
+        if (!is_array($tableIds)) {
+            $tableIds = [$tableIds];
+        }
         
-        $params = [$tableId, $datetime];
+        // If no tables specified, return true (system will auto-assign)
+        if (empty($tableIds)) {
+            return true;
+        }
+        
+        $placeholders = str_repeat('?,', count($tableIds) - 1) . '?';
+        
+        $query = "SELECT COUNT(*) as count 
+                  FROM reservations r
+                  JOIN reservation_tables rt ON r.id = rt.reservation_id
+                  WHERE rt.table_id IN ($placeholders)
+                  AND r.status IN ('pendiente', 'confirmada') 
+                  AND ABS(TIMESTAMPDIFF(MINUTE, r.reservation_datetime, ?)) < 120"; // 2 hour buffer
+        
+        $params = array_merge($tableIds, [$datetime]);
         
         if ($excludeReservationId) {
-            $query .= " AND id != ?";
+            $query .= " AND r.id != ?";
             $params[] = $excludeReservationId;
         }
         
@@ -97,11 +132,78 @@ class Reservation extends BaseModel {
                 }
             }
             
+            // Extract table IDs and waiter ID before creating reservation
+            $tableIds = isset($reservationData['table_ids']) ? $reservationData['table_ids'] : [];
+            $waiterId = isset($reservationData['waiter_id']) ? $reservationData['waiter_id'] : null;
+            
+            // Remove table_ids from reservation data as it's not a column in reservations table
+            unset($reservationData['table_ids']);
+            
+            // Set waiter_id
+            $reservationData['waiter_id'] = $waiterId;
+            
             // Create reservation with customer data directly stored
             $reservationId = $this->create($reservationData);
             
+            // Add tables to the reservation if specified
+            if (!empty($tableIds)) {
+                $this->addTablesToReservation($reservationId, $tableIds);
+            }
+            
             $this->db->commit();
             return $reservationId;
+            
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+    }
+    
+    public function addTablesToReservation($reservationId, $tableIds) {
+        if (!is_array($tableIds)) {
+            $tableIds = [$tableIds];
+        }
+        
+        // Remove existing table assignments for this reservation
+        $stmt = $this->db->prepare("DELETE FROM reservation_tables WHERE reservation_id = ?");
+        $stmt->execute([$reservationId]);
+        
+        // Add new table assignments
+        foreach ($tableIds as $tableId) {
+            if (!empty($tableId)) {
+                $stmt = $this->db->prepare("INSERT INTO reservation_tables (reservation_id, table_id) VALUES (?, ?)");
+                $stmt->execute([$reservationId, $tableId]);
+            }
+        }
+    }
+    
+    public function getReservationTables($reservationId) {
+        $query = "SELECT t.* 
+                  FROM tables t 
+                  JOIN reservation_tables rt ON t.id = rt.table_id 
+                  WHERE rt.reservation_id = ? 
+                  ORDER BY t.number ASC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$reservationId]);
+        
+        return $stmt->fetchAll();
+    }
+    
+    public function updateReservationWithTables($reservationId, $reservationData, $tableIds = []) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Update reservation data
+            $this->update($reservationId, $reservationData);
+            
+            // Update table assignments if provided
+            if (!empty($tableIds)) {
+                $this->addTablesToReservation($reservationId, $tableIds);
+            }
+            
+            $this->db->commit();
+            return true;
             
         } catch (Exception $e) {
             $this->db->rollback();

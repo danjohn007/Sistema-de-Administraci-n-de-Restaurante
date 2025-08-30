@@ -41,8 +41,13 @@ class ReservationsController extends BaseController {
         } else {
             $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
             
+            // Get waiters for assignment (available to all user roles)
+            $waiterModel = new Waiter();
+            $waiters = $waiterModel->getWaitersWithUsers();
+            
             $this->view('reservations/create', [
-                'tables' => $tables
+                'tables' => $tables,
+                'waiters' => $waiters
             ]);
         }
     }
@@ -73,10 +78,17 @@ class ReservationsController extends BaseController {
             $this->processEdit($id);
         } else {
             $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+            $reservationTables = $this->reservationModel->getReservationTables($id);
+            
+            // Get waiters for assignment
+            $waiterModel = new Waiter();
+            $waiters = $waiterModel->getWaitersWithUsers();
             
             $this->view('reservations/edit', [
                 'reservation' => $reservation,
-                'tables' => $tables
+                'tables' => $tables,
+                'reservationTables' => $reservationTables,
+                'waiters' => $waiters
             ]);
         }
     }
@@ -130,12 +142,29 @@ class ReservationsController extends BaseController {
         if (empty($errors)) {
             try {
                 $reservationData = [
-                    'table_id' => $_POST['table_id'],
                     'reservation_datetime' => $_POST['reservation_datetime'],
                     'party_size' => $_POST['party_size'],
                     'notes' => $_POST['notes'] ?? null,
                     'status' => 'pendiente'
                 ];
+                
+                // Handle waiter assignment
+                if (!empty($_POST['waiter_id'])) {
+                    $reservationData['waiter_id'] = $_POST['waiter_id'];
+                }
+                
+                // Handle table selection (can be multiple or none)
+                $tableIds = [];
+                if (!empty($_POST['table_ids']) && is_array($_POST['table_ids'])) {
+                    $tableIds = array_filter($_POST['table_ids'], function($id) {
+                        return !empty($id) && is_numeric($id);
+                    });
+                } elseif (!empty($_POST['table_id'])) {
+                    // Support single table selection for backwards compatibility
+                    $tableIds = [$_POST['table_id']];
+                }
+                
+                $reservationData['table_ids'] = $tableIds;
                 
                 $customerData = [
                     'name' => $_POST['customer_name'],
@@ -143,9 +172,11 @@ class ReservationsController extends BaseController {
                     'birthday' => !empty($_POST['customer_birthday']) ? $_POST['customer_birthday'] : null
                 ];
                 
-                // Check table availability
-                if (!$this->reservationModel->checkTableAvailability($_POST['table_id'], $_POST['reservation_datetime'])) {
-                    throw new Exception('La mesa no está disponible en el horario seleccionado');
+                // Check table availability if tables are specified
+                if (!empty($tableIds)) {
+                    if (!$this->reservationModel->checkTableAvailability($tableIds, $_POST['reservation_datetime'])) {
+                        throw new Exception('Una o más mesas no están disponibles en el horario seleccionado');
+                    }
                 }
                 
                 $reservationId = $this->reservationModel->createReservationWithCustomer($reservationData, $customerData);
@@ -153,20 +184,26 @@ class ReservationsController extends BaseController {
                 
             } catch (Exception $e) {
                 $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+                $waiterModel = new Waiter();
+                $waiters = $waiterModel->getWaitersWithUsers();
                 
                 $this->view('reservations/create', [
                     'error' => 'Error al crear la reservación: ' . $e->getMessage(),
                     'old' => $_POST,
-                    'tables' => $tables
+                    'tables' => $tables,
+                    'waiters' => $waiters
                 ]);
             }
         } else {
             $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+            $waiterModel = new Waiter();
+            $waiters = $waiterModel->getWaitersWithUsers();
             
             $this->view('reservations/create', [
                 'errors' => $errors,
                 'old' => $_POST,
-                'tables' => $tables
+                'tables' => $tables,
+                'waiters' => $waiters
             ]);
         }
     }
@@ -177,40 +214,70 @@ class ReservationsController extends BaseController {
         if (empty($errors)) {
             try {
                 $updateData = [
-                    'table_id' => $_POST['table_id'],
                     'reservation_datetime' => $_POST['reservation_datetime'],
                     'party_size' => $_POST['party_size'],
                     'notes' => $_POST['notes'] ?? null
                 ];
                 
-                // Check table availability (excluding current reservation)
-                if (!$this->reservationModel->checkTableAvailability($_POST['table_id'], $_POST['reservation_datetime'], $id)) {
-                    throw new Exception('La mesa no está disponible en el horario seleccionado');
+                // Handle waiter assignment
+                if (!empty($_POST['waiter_id'])) {
+                    $updateData['waiter_id'] = $_POST['waiter_id'];
+                } else {
+                    $updateData['waiter_id'] = null;
                 }
                 
-                $this->reservationModel->update($id, $updateData);
+                // Handle table selection (can be multiple or none)
+                $tableIds = [];
+                if (!empty($_POST['table_ids']) && is_array($_POST['table_ids'])) {
+                    $tableIds = array_filter($_POST['table_ids'], function($id) {
+                        return !empty($id) && is_numeric($id);
+                    });
+                } elseif (!empty($_POST['table_id'])) {
+                    // Support single table selection for backwards compatibility
+                    $tableIds = [$_POST['table_id']];
+                }
+                
+                // Check table availability if tables are specified (excluding current reservation)
+                if (!empty($tableIds)) {
+                    if (!$this->reservationModel->checkTableAvailability($tableIds, $_POST['reservation_datetime'], $id)) {
+                        throw new Exception('Una o más mesas no están disponibles en el horario seleccionado');
+                    }
+                }
+                
+                // Update reservation and tables
+                $this->reservationModel->updateReservationWithTables($id, $updateData, $tableIds);
                 $this->redirect('reservations/show/' . $id, 'success', 'Reservación actualizada correctamente');
                 
             } catch (Exception $e) {
                 $reservation = $this->reservationModel->find($id);
                 $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+                $reservationTables = $this->reservationModel->getReservationTables($id);
+                $waiterModel = new Waiter();
+                $waiters = $waiterModel->getWaitersWithUsers();
                 
                 $this->view('reservations/edit', [
                     'error' => 'Error al actualizar la reservación: ' . $e->getMessage(),
                     'old' => $_POST,
                     'reservation' => $reservation,
-                    'tables' => $tables
+                    'tables' => $tables,
+                    'reservationTables' => $reservationTables,
+                    'waiters' => $waiters
                 ]);
             }
         } else {
             $reservation = $this->reservationModel->find($id);
             $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+            $reservationTables = $this->reservationModel->getReservationTables($id);
+            $waiterModel = new Waiter();
+            $waiters = $waiterModel->getWaitersWithUsers();
             
             $this->view('reservations/edit', [
                 'errors' => $errors,
                 'old' => $_POST,
                 'reservation' => $reservation,
-                'tables' => $tables
+                'tables' => $tables,
+                'reservationTables' => $reservationTables,
+                'waiters' => $waiters
             ]);
         }
     }
@@ -219,7 +286,6 @@ class ReservationsController extends BaseController {
         $errors = $this->validateInput($data, [
             'customer_name' => ['required' => true, 'max' => 255],
             'customer_phone' => ['required' => true, 'max' => 20],
-            'table_id' => ['required' => true],
             'reservation_datetime' => ['required' => true],
             'party_size' => ['required' => true, 'min' => 1, 'max' => 20]
         ]);
@@ -239,6 +305,15 @@ class ReservationsController extends BaseController {
                 $errors['reservation_datetime'] = 'La fecha y hora de reservación debe ser al menos 30 minutos en adelante';
             } elseif ($reservationTime > $maxTime) {
                 $errors['reservation_datetime'] = 'La fecha y hora de reservación no puede ser más de 30 días en adelante';
+            }
+        }
+        
+        // Validate waiter assignment (optional but if provided, must be valid)
+        if (!empty($data['waiter_id'])) {
+            $waiterModel = new Waiter();
+            $waiter = $waiterModel->find($data['waiter_id']);
+            if (!$waiter || !$waiter['active']) {
+                $errors['waiter_id'] = 'El mesero seleccionado no es válido';
             }
         }
         

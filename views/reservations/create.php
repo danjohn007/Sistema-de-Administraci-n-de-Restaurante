@@ -1,25 +1,24 @@
-<?php $title = 'Hacer Reservación'; ?>
+<?php $title = 'Nueva Reservación'; ?>
 
-<div class="row">
-    <div class="col-12">
-        <h1 class="text-center mb-4">
-            <i class="bi bi-calendar-check"></i> Hacer una Reservación
-        </h1>
-        <p class="text-center lead mb-5">Reserve su mesa para una fecha y hora específica</p>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-calendar-plus"></i> Nueva Reservación</h1>
+    <a href="<?= BASE_URL ?>/reservations" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver a Reservaciones
+    </a>
 </div>
 
 <?php if (isset($error)): ?>
     <div class="alert alert-danger">
-        <i class="bi bi-exclamation-triangle"></i> <?= htmlspecialchars($error) ?>
+        <i class="bi bi-exclamation-triangle"></i>
+        <?= htmlspecialchars($error) ?>
     </div>
 <?php endif; ?>
 
-<form method="POST" action="<?= BASE_URL ?>/public/reservation" id="publicReservationForm">
-    <div class="row justify-content-center">
+<form method="POST" action="<?= BASE_URL ?>/reservations/create">
+    <div class="row">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-info-circle"></i> Información de la Reservación
                     </h5>
@@ -28,12 +27,12 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="customer_name" class="form-label">Nombre Completo *</label>
+                                <label for="customer_name" class="form-label">Nombre del Cliente *</label>
                                 <input type="text" 
                                        class="form-control <?= isset($errors['customer_name']) ? 'is-invalid' : '' ?>" 
                                        id="customer_name" 
                                        name="customer_name" 
-                                       value="<?= htmlspecialchars($old['customer_name'] ?? '') ?>"
+                                       value="<?= htmlspecialchars($old['customer_name'] ?? '') ?>" 
                                        required>
                                 <?php if (isset($errors['customer_name'])): ?>
                                     <div class="invalid-feedback">
@@ -42,7 +41,6 @@
                                 <?php endif; ?>
                             </div>
                         </div>
-                        
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="customer_phone" class="form-label">Teléfono *</label>
@@ -50,7 +48,7 @@
                                        class="form-control <?= isset($errors['customer_phone']) ? 'is-invalid' : '' ?>" 
                                        id="customer_phone" 
                                        name="customer_phone" 
-                                       value="<?= htmlspecialchars($old['customer_phone'] ?? '') ?>"
+                                       value="<?= htmlspecialchars($old['customer_phone'] ?? '') ?>" 
                                        required>
                                 <?php if (isset($errors['customer_phone'])): ?>
                                     <div class="invalid-feedback">
@@ -60,18 +58,17 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="customer_birthday" class="form-label">Fecha de Cumpleaños (Opcional)</label>
+                                <label for="customer_birthday" class="form-label">Cumpleaños (Opcional)</label>
                                 <input type="text" 
                                        class="form-control <?= isset($errors['customer_birthday']) ? 'is-invalid' : '' ?>" 
                                        id="customer_birthday" 
                                        name="customer_birthday" 
-                                       value="<?= htmlspecialchars($old['customer_birthday'] ?? '') ?>"
-                                       placeholder="DD/MM (ej: 15/03)"
-                                       pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])$">
+                                       placeholder="DD/MM"
+                                       value="<?= htmlspecialchars($old['customer_birthday'] ?? '') ?>">
                                 <?php if (isset($errors['customer_birthday'])): ?>
                                     <div class="invalid-feedback">
                                         <?= htmlspecialchars($errors['customer_birthday']) ?>
@@ -82,7 +79,6 @@
                                 </div>
                             </div>
                         </div>
-                        
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="party_size" class="form-label">Número de Personas *</label>
@@ -106,88 +102,121 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="reservation_datetime" class="form-label">Fecha y Hora de Reservación *</label>
+                                <label for="reservation_datetime" class="form-label">Fecha y Hora *</label>
                                 <input type="datetime-local" 
                                        class="form-control <?= isset($errors['reservation_datetime']) ? 'is-invalid' : '' ?>" 
                                        id="reservation_datetime" 
-                                       name="reservation_datetime"
-                                       value="<?= htmlspecialchars($old['reservation_datetime'] ?? '') ?>"
+                                       name="reservation_datetime" 
+                                       value="<?= htmlspecialchars($old['reservation_datetime'] ?? '') ?>" 
                                        required>
                                 <?php if (isset($errors['reservation_datetime'])): ?>
                                     <div class="invalid-feedback">
                                         <?= htmlspecialchars($errors['reservation_datetime']) ?>
                                     </div>
                                 <?php endif; ?>
-                                <div class="form-text">
-                                    Seleccione fecha y hora (mínimo 30 minutos de anticipación)
-                                    <br><small id="timezone-info" class="text-muted"></small>
-                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Mesas Preferidas (Opcional)</label>
-                                <div class="form-text mb-2">
-                                    Seleccione una o más mesas de su preferencia. Si no selecciona ninguna, nuestro personal le asignará las mejores mesas disponibles.
-                                </div>
-                                <div class="row" id="tables-selection">
-                                    <?php foreach ($tables as $table): ?>
-                                        <div class="col-6 mb-2">
-                                            <div class="form-check">
-                                                <input class="form-check-input table-checkbox" 
-                                                       type="checkbox" 
-                                                       value="<?= $table['id'] ?>" 
-                                                       name="table_ids[]" 
-                                                       id="public_table_<?= $table['id'] ?>"
-                                                       <?= in_array($table['id'], $old['table_ids'] ?? []) ? 'checked' : '' ?>>
-                                                <label class="form-check-label" for="public_table_<?= $table['id'] ?>">
-                                                    <strong>Mesa <?= $table['number'] ?></strong><br>
-                                                    <small class="text-muted">Capacidad: <?= $table['capacity'] ?> personas</small>
-                                                </label>
-                                            </div>
-                                        </div>
+                                <label for="waiter_id" class="form-label">Mesero Asignado (Opcional)</label>
+                                <select class="form-select <?= isset($errors['waiter_id']) ? 'is-invalid' : '' ?>" 
+                                        id="waiter_id" 
+                                        name="waiter_id">
+                                    <option value="">Sin asignación específica</option>
+                                    <?php foreach ($waiters as $waiter): ?>
+                                        <option value="<?= $waiter['id'] ?>" 
+                                                <?= (($old['waiter_id'] ?? '') == $waiter['id']) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($waiter['name']) ?> (<?= htmlspecialchars($waiter['employee_code']) ?>)
+                                        </option>
                                     <?php endforeach; ?>
+                                </select>
+                                <?php if (isset($errors['waiter_id'])): ?>
+                                    <div class="invalid-feedback">
+                                        <?= htmlspecialchars($errors['waiter_id']) ?>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="form-text">
+                                    El mesero puede asignarse durante la confirmación de la reservación
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
+                    <div class="mb-3">
+                        <label class="form-label">Mesas Preferidas (Opcional)</label>
+                        <div class="form-text mb-2">
+                            Seleccione una o más mesas para esta reservación. Si no selecciona ninguna, el personal asignará las mejores mesas disponibles.
+                        </div>
+                        <div class="row" id="tables-selection">
+                            <?php foreach ($tables as $table): ?>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input table-checkbox" 
+                                               type="checkbox" 
+                                               value="<?= $table['id'] ?>" 
+                                               name="table_ids[]" 
+                                               id="table_<?= $table['id'] ?>"
+                                               <?= in_array($table['id'], $old['table_ids'] ?? []) ? 'checked' : '' ?>>
+                                        <label class="form-check-label" for="table_<?= $table['id'] ?>">
+                                            <strong>Mesa <?= $table['number'] ?></strong><br>
+                                            <small class="text-muted">Capacidad: <?= $table['capacity'] ?> personas</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label for="notes" class="form-label">Notas Especiales</label>
                         <textarea class="form-control" 
                                   id="notes" 
                                   name="notes" 
                                   rows="3" 
-                                  placeholder="Celebración especial, alergias alimentarias, solicitudes especiales..."><?= htmlspecialchars($old['notes'] ?? '') ?></textarea>
-                    </div>
-                    
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i>
-                        <strong>Información importante:</strong>
-                        <ul class="mb-0 mt-2">
-                            <li>Su reservación será confirmada por nuestro personal</li>
-                            <li>Mantenemos un margen de tolerancia de 15 minutos</li>
-                            <li>Para grupos grandes (más de 10 personas), contacte directamente al restaurante</li>
-                            <li>Si proporcionó su fecha de cumpleaños, recibirá ofertas especiales</li>
-                        </ul>
+                                  placeholder="Alguna solicitud especial, dieta, alergias, etc."><?= htmlspecialchars($old['notes'] ?? '') ?></textarea>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="row mt-4 mb-5">
-        <div class="col-12 text-center">
-            <a href="<?= BASE_URL ?>/public/menu" class="btn btn-outline-secondary me-3">
-                <i class="bi bi-arrow-left"></i> Volver al Menú
-            </a>
-            <button type="submit" class="btn btn-primary btn-lg">
-                <i class="bi bi-calendar-check"></i> Hacer Reservación
-            </button>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle"></i> Información Importante
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-clock"></i> Horarios de Atención</h6>
+                        <p class="mb-1"><strong>Lunes a Viernes:</strong> 11:00 - 22:00</p>
+                        <p class="mb-1"><strong>Sábados:</strong> 10:00 - 23:00</p>
+                        <p class="mb-0"><strong>Domingos:</strong> 10:00 - 21:00</p>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-exclamation-triangle"></i> Políticas</h6>
+                        <ul class="mb-0 small">
+                            <li>La reservación debe hacerse con al menos 30 minutos de anticipación</li>
+                            <li>La mesa se mantendrá disponible por 15 minutos después de la hora reservada</li>
+                            <li>Para grupos de más de 8 personas, contactar directamente al restaurante</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-3">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-calendar-plus"></i> Crear Reservación
+                </button>
+                <a href="<?= BASE_URL ?>/reservations" class="btn btn-outline-secondary">
+                    Cancelar
+                </a>
+            </div>
         </div>
     </div>
 </form>
@@ -208,12 +237,10 @@ document.addEventListener('DOMContentLoaded', function() {
     maxDate.setDate(maxDate.getDate() + 30);
     reservationDatetime.max = maxDate.toISOString().slice(0, 16);
     
-    // Show timezone info to user
-    updateTimezoneInfo();
-    
     // Filter tables based on party size
     partySizeSelect.addEventListener('change', function() {
         const partySize = parseInt(this.value);
+        let totalSelectedCapacity = 0;
         
         tableCheckboxes.forEach(function(checkbox) {
             const label = checkbox.nextElementSibling;
@@ -221,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (capacityMatch) {
                 const capacity = parseInt(capacityMatch[1]);
-                const tableContainer = checkbox.closest('.col-6');
+                const tableContainer = checkbox.closest('.col-md-4');
                 
                 if (partySize > 0) {
                     // Show/hide tables based on individual capacity
@@ -292,67 +319,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Add additional validation for reservation datetime
-    reservationDatetime.addEventListener('change', function() {
-        if (this.value) {
-            const selectedTime = new Date(this.value);
-            const now = new Date();
-            const minTime = new Date(now.getTime() + 30 * 60000); // 30 minutes from now
-            const maxTime = new Date(now.getTime() + 30 * 24 * 60 * 60000); // 30 days from now
-            
-            if (selectedTime < minTime) {
-                alert('La fecha y hora de reservación debe ser al menos 30 minutos en adelante.');
-                this.value = '';
-                return;
-            }
-            
-            if (selectedTime > maxTime) {
-                alert('La fecha y hora de reservación no puede ser más de 30 días en adelante.');
-                this.value = '';
-                return;
-            }
-        }
-    });
-    
-    function updateTimezoneInfo() {
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const now = new Date();
-        const timeString = now.toLocaleString('es-MX', {
-            timeZone: timezone,
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZoneName: 'short'
-        });
-        
-        const timezoneInfo = document.getElementById('timezone-info');
-        if (timezoneInfo) {
-            timezoneInfo.textContent = `Su zona horaria: ${timezone} | Hora actual: ${timeString}`;
-        }
-    }
-    
-    // Add birthday format validation
-    const birthdayInput = document.getElementById('customer_birthday');
-    if (birthdayInput) {
-        birthdayInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
-            if (value.length >= 2) {
-                value = value.substring(0, 2) + '/' + value.substring(2, 4);
-            }
-            e.target.value = value;
-        });
-        
-        birthdayInput.addEventListener('blur', function(e) {
-            const value = e.target.value;
-            if (value && !value.match(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])$/)) {
-                e.target.setCustomValidity('Use el formato DD/MM (ej: 15/03)');
-            } else {
-                e.target.setCustomValidity('');
-            }
-        });
-    }
+    // Initial capacity update
+    updateCapacityCounter();
 });
 </script>
 
@@ -361,13 +329,11 @@ document.addEventListener('DOMContentLoaded', function() {
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
-.alert-info {
-    border-left: 4px solid #0dcaf0;
+.alert h6 {
+    margin-bottom: 0.5rem;
 }
 
-.form-control:focus,
-.form-select:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+.alert ul {
+    padding-left: 1rem;
 }
 </style>
