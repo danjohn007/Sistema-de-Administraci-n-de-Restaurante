@@ -161,7 +161,7 @@ class OrdersController extends BaseController {
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $status = $_POST['status'] ?? '';
-            $validStatuses = [ORDER_PENDING, ORDER_PREPARING, ORDER_READY, ORDER_DELIVERED];
+            $validStatuses = [ORDER_PENDING_CONFIRMATION, ORDER_PENDING, ORDER_PREPARING, ORDER_READY, ORDER_DELIVERED];
             
             if (!in_array($status, $validStatuses)) {
                 $this->redirect('orders', 'error', 'Estado inválido');
@@ -176,6 +176,48 @@ class OrdersController extends BaseController {
             }
         } else {
             $this->redirect('orders/show/' . $id);
+        }
+    }
+    
+    public function confirmPublicOrder($id) {
+        $this->requireRole([ROLE_ADMIN, ROLE_CASHIER]);
+        
+        $order = $this->orderModel->find($id);
+        if (!$order) {
+            $this->redirect('orders', 'error', 'Pedido no encontrado');
+            return;
+        }
+        
+        if ($order['status'] !== ORDER_PENDING_CONFIRMATION) {
+            $this->redirect('orders', 'error', 'Solo se pueden confirmar pedidos pendientes de confirmación');
+            return;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $waiterId = $_POST['waiter_id'] ?? null;
+            
+            if (empty($waiterId)) {
+                $this->redirect('orders', 'error', 'Debe seleccionar un mesero para confirmar el pedido');
+                return;
+            }
+            
+            try {
+                $this->orderModel->update($id, [
+                    'waiter_id' => $waiterId,
+                    'status' => ORDER_PENDING
+                ]);
+                
+                $this->redirect('orders', 'success', 'Pedido público confirmado y asignado correctamente');
+            } catch (Exception $e) {
+                $this->redirect('orders', 'error', 'Error al confirmar el pedido: ' . $e->getMessage());
+            }
+        } else {
+            $waiters = $this->waiterModel->getWaitersWithUsers();
+            
+            $this->view('orders/confirm_public', [
+                'order' => $order,
+                'waiters' => $waiters
+            ]);
         }
     }
     

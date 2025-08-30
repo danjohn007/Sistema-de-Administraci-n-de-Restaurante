@@ -96,6 +96,42 @@ class Order extends BaseModel {
         }
     }
     
+    public function createPublicOrderWithItems($orderData, $items) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Create order
+            $orderId = $this->create($orderData);
+            if (!$orderId) {
+                throw new Exception('Error al crear la orden');
+            }
+            
+            // Add items
+            $orderItemModel = new OrderItem();
+            $total = 0;
+            
+            foreach ($items as $item) {
+                $item['order_id'] = $orderId;
+                $item['subtotal'] = $item['quantity'] * $item['unit_price'];
+                $total += $item['subtotal'];
+                
+                if (!$orderItemModel->create($item)) {
+                    throw new Exception('Error al agregar item a la orden');
+                }
+            }
+            
+            // Update order total
+            $this->update($orderId, ['total' => $total]);
+            
+            $this->db->commit();
+            return $orderId;
+            
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+    }
+    
     public function updateOrderStatus($orderId, $status) {
         return $this->update($orderId, ['status' => $status]);
     }

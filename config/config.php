@@ -41,6 +41,7 @@ define('TABLE_BILL_REQUESTED', 'cuenta_solicitada');
 define('TABLE_CLOSED', 'cerrada');
 
 // Order statuses
+define('ORDER_PENDING_CONFIRMATION', 'pendiente_confirmacion');
 define('ORDER_PENDING', 'pendiente');
 define('ORDER_PREPARING', 'en_preparacion');
 define('ORDER_READY', 'listo');
