@@ -1,10 +1,12 @@
-<?php $title = 'Gestión de Mesas'; ?>
+<?php $title = ($user['role'] === ROLE_WAITER) ? 'Consultar Mesas' : 'Gestión de Mesas'; ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="bi bi-grid-3x3-gap"></i> Gestión de Mesas</h1>
+    <h1><i class="bi bi-grid-3x3-gap"></i> <?= ($user['role'] === ROLE_WAITER) ? 'Consultar Mesas' : 'Gestión de Mesas' ?></h1>
+    <?php if ($user['role'] === ROLE_ADMIN): ?>
     <a href="<?= BASE_URL ?>/tables/create" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Nueva Mesa
     </a>
+    <?php endif; ?>
 </div>
 
 <!-- Estadísticas -->
@@ -68,9 +70,11 @@
             <div class="text-center py-4">
                 <i class="bi bi-table display-4 text-muted"></i>
                 <p class="mt-3 text-muted">No se encontraron mesas</p>
+                <?php if ($user['role'] === ROLE_ADMIN): ?>
                 <a href="<?= BASE_URL ?>/tables/create" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Crear Primera Mesa
                 </a>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <div class="table-responsive">
@@ -126,6 +130,7 @@
                                 </small>
                             </td>
                             <td class="text-center">
+                                <?php if ($user['role'] === ROLE_ADMIN): ?>
                                 <div class="btn-group btn-group-sm" role="group">
                                     <a href="<?= BASE_URL ?>/tables/edit/<?= $table['id'] ?>" 
                                        class="btn btn-outline-primary" title="Editar">
@@ -143,6 +148,9 @@
                                     </button>
                                     <?php endif; ?>
                                 </div>
+                                <?php else: ?>
+                                <span class="text-muted">Solo consulta</span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>

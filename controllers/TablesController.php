@@ -10,7 +10,9 @@ class TablesController extends BaseController {
     }
     
     public function index() {
-        $this->requireRole(ROLE_ADMIN);
+        $this->requireRole([ROLE_ADMIN, ROLE_WAITER]);
+        
+        $user = $this->getCurrentUser();
         
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
@@ -114,7 +116,8 @@ class TablesController extends BaseController {
                 TABLE_OCCUPIED => 'Ocupada',
                 TABLE_BILL_REQUESTED => 'Cuenta Solicitada',
                 'cerrada' => 'Cerrada'
-            ]
+            ],
+            'user' => $user
         ]);
     }
     
