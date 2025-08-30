@@ -152,6 +152,34 @@ class Order extends BaseModel {
         }
     }
     
+    // Helper method for creating orders with items within an existing transaction
+    private function createOrderWithItemsInTransaction($orderData, $items) {
+        // Create order
+        $orderId = $this->create($orderData);
+        if (!$orderId) {
+            throw new Exception('Error al crear la orden');
+        }
+        
+        // Add items
+        $orderItemModel = new OrderItem();
+        $total = 0;
+        
+        foreach ($items as $item) {
+            $item['order_id'] = $orderId;
+            $item['subtotal'] = $item['quantity'] * $item['unit_price'];
+            $total += $item['subtotal'];
+            
+            if (!$orderItemModel->create($item)) {
+                throw new Exception('Error al agregar item a la orden');
+            }
+        }
+        
+        // Update order total
+        $this->update($orderId, ['total' => $total]);
+        
+        return $orderId;
+    }
+    
     public function updateOrderStatus($orderId, $status) {
         return $this->update($orderId, ['status' => $status]);
     }
@@ -393,8 +421,8 @@ class Order extends BaseModel {
             // Add customer_id to order data
             $orderData['customer_id'] = $customerId;
             
-            // Create order with items
-            $orderId = $this->createPublicOrderWithItems($orderData, $items);
+            // Create order with items using helper method (no nested transaction)
+            $orderId = $this->createOrderWithItemsInTransaction($orderData, $items);
             
             $this->db->commit();
             return $orderId;
