@@ -82,7 +82,7 @@ class PublicController extends BaseController {
         
         // Create order data
         $orderData = [
-            'table_id' => $_POST['table_id'],
+            'table_id' => !empty($_POST['table_id']) ? $_POST['table_id'] : null,
             'waiter_id' => null, // Public orders don't have waiter assigned yet
             'status' => 'pendiente_confirmacion', // New status for public orders
             'notes' => $_POST['notes'] ?? null,
@@ -101,9 +101,9 @@ class PublicController extends BaseController {
         try {
             $orderId = $this->orderModel->createPublicOrderWithCustomer($orderData, $items, $customerData);
             
-            // Don't update table status for pickup orders
-            if (!$orderData['is_pickup']) {
-                $this->tableModel->update($_POST['table_id'], ['status' => TABLE_OCCUPIED]);
+            // Don't update table status for pickup orders or orders without table
+            if (!$orderData['is_pickup'] && !empty($orderData['table_id'])) {
+                $this->tableModel->update($orderData['table_id'], ['status' => TABLE_OCCUPIED]);
             }
             
             $this->viewPublic('public/order_success', [
@@ -126,9 +126,22 @@ class PublicController extends BaseController {
     private function validatePublicOrderInput($data) {
         $errors = $this->validateInput($data, [
             'customer_name' => ['required' => true, 'max' => 255],
-            'customer_phone' => ['required' => true, 'max' => 20],
-            'table_id' => ['required' => true]
+            'customer_phone' => ['required' => true, 'max' => 20]
+            // table_id is now optional - removed required validation
         ]);
+        
+        // Validate birthday format if provided (DD/MM)
+        if (!empty($data['customer_birthday'])) {
+            if (!preg_match('/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])$/', $data['customer_birthday'])) {
+                $errors['customer_birthday'] = 'Formato de cumpleaños inválido. Use DD/MM (ej: 15/03)';
+            } else {
+                // Validate that it's a valid date combination
+                list($day, $month) = explode('/', $data['customer_birthday']);
+                if (!checkdate($month, $day, 2000)) {
+                    $errors['customer_birthday'] = 'Fecha de cumpleaños inválida';
+                }
+            }
+        }
         
         // Validate pickup datetime if pickup is selected
         if (isset($data['is_pickup']) && !empty($data['pickup_datetime'])) {
@@ -194,7 +207,7 @@ class PublicController extends BaseController {
         if (empty($errors)) {
             try {
                 $reservationData = [
-                    'table_id' => $_POST['table_id'],
+                    'table_id' => !empty($_POST['table_id']) ? $_POST['table_id'] : null,
                     'reservation_datetime' => $_POST['reservation_datetime'],
                     'party_size' => $_POST['party_size'],
                     'notes' => $_POST['notes'] ?? null,
@@ -207,8 +220,8 @@ class PublicController extends BaseController {
                     'birthday' => !empty($_POST['customer_birthday']) ? $_POST['customer_birthday'] : null
                 ];
                 
-                // Check table availability
-                if (!$this->reservationModel->checkTableAvailability($_POST['table_id'], $_POST['reservation_datetime'])) {
+                // Check table availability only if a table is selected
+                if (!empty($reservationData['table_id']) && !$this->reservationModel->checkTableAvailability($reservationData['table_id'], $_POST['reservation_datetime'])) {
                     throw new Exception('La mesa no está disponible en el horario seleccionado');
                 }
                 
@@ -242,10 +255,23 @@ class PublicController extends BaseController {
         $errors = $this->validateInput($data, [
             'customer_name' => ['required' => true, 'max' => 255],
             'customer_phone' => ['required' => true, 'max' => 20],
-            'table_id' => ['required' => true],
+            // table_id is now optional - removed required validation
             'reservation_datetime' => ['required' => true],
             'party_size' => ['required' => true, 'min' => 1, 'max' => 20]
         ]);
+        
+        // Validate birthday format if provided (DD/MM)
+        if (!empty($data['customer_birthday'])) {
+            if (!preg_match('/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])$/', $data['customer_birthday'])) {
+                $errors['customer_birthday'] = 'Formato de cumpleaños inválido. Use DD/MM (ej: 15/03)';
+            } else {
+                // Validate that it's a valid date combination
+                list($day, $month) = explode('/', $data['customer_birthday']);
+                if (!checkdate($month, $day, 2000)) {
+                    $errors['customer_birthday'] = 'Fecha de cumpleaños inválida';
+                }
+            }
+        }
         
         // Validate reservation datetime
         if (isset($data['reservation_datetime']) && !empty($data['reservation_datetime'])) {

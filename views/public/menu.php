@@ -57,12 +57,11 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="table_id" class="form-label">Mesa *</label>
+                        <label for="table_id" class="form-label">Mesa (Opcional)</label>
                         <select class="form-select <?= isset($errors['table_id']) ? 'is-invalid' : '' ?>" 
                                 id="table_id" 
-                                name="table_id" 
-                                required>
-                            <option value="">Seleccionar mesa...</option>
+                                name="table_id">
+                            <option value="">Sin mesa asignada (para llevar o asignación posterior)</option>
                             <?php foreach ($tables as $table): ?>
                                 <option value="<?= $table['id'] ?>" 
                                         <?= (($old['table_id'] ?? '') == $table['id']) ? 'selected' : '' ?>>
@@ -76,6 +75,9 @@
                                 <?= htmlspecialchars($errors['table_id']) ?>
                             </div>
                         <?php endif; ?>
+                        <div class="form-text">
+                            Puede dejar sin mesa para pedidos de llevar o asignación posterior por el personal
+                        </div>
                     </div>
                     
                     <div class="mb-3">
@@ -111,18 +113,20 @@
                     
                     <div class="mb-3">
                         <label for="customer_birthday" class="form-label">Fecha de Cumpleaños (Opcional)</label>
-                        <input type="date" 
+                        <input type="text" 
                                class="form-control <?= isset($errors['customer_birthday']) ? 'is-invalid' : '' ?>" 
                                id="customer_birthday" 
                                name="customer_birthday" 
-                               value="<?= htmlspecialchars($old['customer_birthday'] ?? '') ?>">
+                               value="<?= htmlspecialchars($old['customer_birthday'] ?? '') ?>"
+                               placeholder="DD/MM (ej: 15/03)"
+                               pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])$">
                         <?php if (isset($errors['customer_birthday'])): ?>
                             <div class="invalid-feedback">
                                 <?= htmlspecialchars($errors['customer_birthday']) ?>
                             </div>
                         <?php endif; ?>
                         <div class="form-text">
-                            Ayúdanos a celebrar contigo y obtener ofertas especiales
+                            Solo día y mes (DD/MM). Ayúdanos a celebrar contigo y obtener ofertas especiales
                         </div>
                     </div>
                     
@@ -342,6 +346,27 @@ document.addEventListener('DOMContentLoaded', function() {
         if (timezoneInfo) {
             timezoneInfo.textContent = `Su zona horaria: ${timezone} | Hora actual: ${timeString}`;
         }
+    }
+    
+    // Add birthday format validation
+    const birthdayInput = document.getElementById('customer_birthday');
+    if (birthdayInput) {
+        birthdayInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+        
+        birthdayInput.addEventListener('blur', function(e) {
+            const value = e.target.value;
+            if (value && !value.match(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])$/)) {
+                e.target.setCustomValidity('Use el formato DD/MM (ej: 15/03)');
+            } else {
+                e.target.setCustomValidity('');
+            }
+        });
     }
     
     // Add additional validation for pickup datetime

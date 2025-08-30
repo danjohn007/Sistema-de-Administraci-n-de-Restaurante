@@ -75,12 +75,18 @@ class Reservation extends BaseModel {
         try {
             $this->db->beginTransaction();
             
-            // Create or find customer
+            // Store customer information directly in reservation (original design)
+            // The reservations table has customer_name, customer_phone, customer_birthday columns
+            $reservationData['customer_name'] = $customerData['name'];
+            $reservationData['customer_phone'] = $customerData['phone'];
+            $reservationData['customer_birthday'] = $customerData['birthday'] ?? null;
+            
+            // Also create/update customer record for tracking purposes
             $customerModel = new Customer();
             $customer = $customerModel->findBy('phone', $customerData['phone']);
             
             if (!$customer) {
-                $customerId = $customerModel->create($customerData);
+                $customerModel->create($customerData);
             } else {
                 // Update customer info if provided
                 if (isset($customerData['name']) && $customerData['name'] !== $customer['name']) {
@@ -89,11 +95,9 @@ class Reservation extends BaseModel {
                 if (isset($customerData['birthday']) && $customerData['birthday'] !== $customer['birthday']) {
                     $customerModel->update($customer['id'], ['birthday' => $customerData['birthday']]);
                 }
-                $customerId = $customer['id'];
             }
             
-            // Create reservation
-            $reservationData['customer_id'] = $customerId;
+            // Create reservation with customer data directly stored
             $reservationId = $this->create($reservationData);
             
             $this->db->commit();
