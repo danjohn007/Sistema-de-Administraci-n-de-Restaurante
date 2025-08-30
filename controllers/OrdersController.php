@@ -55,9 +55,9 @@ class OrdersController extends BaseController {
             
             $dishes = $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC');
             
-            // Get waiters for admin role
+            // Get waiters for admin and cashier roles
             $waiters = [];
-            if ($user['role'] === ROLE_ADMIN) {
+            if ($user['role'] === ROLE_ADMIN || $user['role'] === ROLE_CASHIER) {
                 $waiters = $this->waiterModel->getWaitersWithUsers();
             }
             
@@ -216,7 +216,7 @@ class OrdersController extends BaseController {
         if (!empty($errors)) {
             $user = $this->getCurrentUser();
             $waiters = [];
-            if ($user['role'] === ROLE_ADMIN) {
+            if ($user['role'] === ROLE_ADMIN || $user['role'] === ROLE_CASHIER) {
                 $waiters = $this->waiterModel->getWaitersWithUsers();
             }
             
@@ -268,7 +268,7 @@ class OrdersController extends BaseController {
         if (empty($items)) {
             $user = $this->getCurrentUser();
             $waiters = [];
-            if ($user['role'] === ROLE_ADMIN) {
+            if ($user['role'] === ROLE_ADMIN || $user['role'] === ROLE_CASHIER) {
                 $waiters = $this->waiterModel->getWaitersWithUsers();
             }
             
@@ -293,7 +293,7 @@ class OrdersController extends BaseController {
         } catch (Exception $e) {
             $user = $this->getCurrentUser();
             $waiters = [];
-            if ($user['role'] === ROLE_ADMIN) {
+            if ($user['role'] === ROLE_ADMIN || $user['role'] === ROLE_CASHIER) {
                 $waiters = $this->waiterModel->getWaitersWithUsers();
             }
             
@@ -373,9 +373,9 @@ class OrdersController extends BaseController {
             'table_id' => ['required' => true]
         ]);
         
-        // Validate waiter for admin users
+        // Validate waiter for admin and cashier users
         $user = $this->getCurrentUser();
-        if ($user['role'] === ROLE_ADMIN && empty($data['waiter_id'])) {
+        if (($user['role'] === ROLE_ADMIN || $user['role'] === ROLE_CASHIER) && empty($data['waiter_id'])) {
             $errors['waiter_id'] = 'Debe seleccionar un mesero';
         }
         

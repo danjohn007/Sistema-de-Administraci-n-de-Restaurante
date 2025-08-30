@@ -47,7 +47,7 @@
                         <?php endif; ?>
                     </div>
                     
-                    <?php if ($user['role'] === ROLE_ADMIN): ?>
+                    <?php if ($user['role'] === ROLE_ADMIN || $user['role'] === ROLE_CASHIER): ?>
                     <div class="mb-3">
                         <label for="waiter_id" class="form-label">Mesero *</label>
                         <select class="form-select <?= isset($errors['waiter_id']) ? 'is-invalid' : '' ?>" 
