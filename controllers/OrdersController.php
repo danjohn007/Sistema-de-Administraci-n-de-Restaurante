@@ -18,6 +18,9 @@ class OrdersController extends BaseController {
         $user = $this->getCurrentUser();
         $filters = [];
         
+        // Check if we're showing future orders
+        $showFuture = isset($_GET['future']) && $_GET['future'] == '1';
+        
         // Filter by waiter for non-admin users
         if ($user['role'] === ROLE_WAITER) {
             $waiter = $this->waiterModel->findBy('user_id', $user['id']);
@@ -30,12 +33,17 @@ class OrdersController extends BaseController {
         }
         
         if (!isset($orders)) {
-            $orders = $this->orderModel->getOrdersWithDetails($filters);
+            if ($showFuture) {
+                $orders = $this->orderModel->getFuturePickupOrders($filters);
+            } else {
+                $orders = $this->orderModel->getTodaysOrders($filters);
+            }
         }
         
         $this->view('orders/index', [
             'orders' => $orders,
-            'user' => $user
+            'user' => $user,
+            'showFuture' => $showFuture
         ]);
     }
     
@@ -249,6 +257,31 @@ class OrdersController extends BaseController {
         $this->view('orders/table', [
             'table' => $table,
             'orders' => $orders
+        ]);
+    }
+    
+    public function futureOrders() {
+        $user = $this->getCurrentUser();
+        $filters = [];
+        
+        // Filter by waiter for non-admin users
+        if ($user['role'] === ROLE_WAITER) {
+            $waiter = $this->waiterModel->findBy('user_id', $user['id']);
+            if ($waiter) {
+                $filters['waiter_id'] = $waiter['id'];
+            } else {
+                // User is not a waiter, show empty list
+                $orders = [];
+            }
+        }
+        
+        if (!isset($orders)) {
+            $orders = $this->orderModel->getFuturePickupOrders($filters);
+        }
+        
+        $this->view('orders/future', [
+            'orders' => $orders,
+            'user' => $user
         ]);
     }
     

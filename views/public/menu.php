@@ -104,7 +104,8 @@
                             </div>
                         <?php endif; ?>
                         <div class="form-text">
-                            Seleccione cuándo desea recoger su pedido
+                            Seleccione cuándo desea recoger su pedido (hasta 30 días en adelante)
+                            <br><small id="timezone-info" class="text-muted"></small>
                         </div>
                     </div>
                     
@@ -219,10 +220,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (this.checked) {
             pickupContainer.style.display = 'block';
             pickupDatetime.required = true;
-            // Set minimum datetime to now + 30 minutes
+            // Set minimum datetime to now + 30 minutes (in user's local timezone)
             const now = new Date();
             now.setMinutes(now.getMinutes() + 30);
             pickupDatetime.min = now.toISOString().slice(0, 16);
+            
+            // Set maximum datetime to 30 days from now
+            const maxDate = new Date();
+            maxDate.setDate(maxDate.getDate() + 30);
+            pickupDatetime.max = maxDate.toISOString().slice(0, 16);
+            
+            // Show timezone info to user
+            updateTimezoneInfo();
         } else {
             pickupContainer.style.display = 'none';
             pickupDatetime.required = false;
@@ -297,6 +306,48 @@ document.addEventListener('DOMContentLoaded', function() {
         
         totalElement.textContent = '$' + total.toFixed(2);
     }
+    
+    // Function to update timezone information
+    function updateTimezoneInfo() {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const now = new Date();
+        const timeString = now.toLocaleString('es-MX', {
+            timeZone: timezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZoneName: 'short'
+        });
+        
+        const timezoneInfo = document.getElementById('timezone-info');
+        if (timezoneInfo) {
+            timezoneInfo.textContent = `Su zona horaria: ${timezone} | Hora actual: ${timeString}`;
+        }
+    }
+    
+    // Add additional validation for pickup datetime
+    pickupDatetime.addEventListener('change', function() {
+        if (this.value) {
+            const selectedTime = new Date(this.value);
+            const now = new Date();
+            const minTime = new Date(now.getTime() + 30 * 60000); // 30 minutes from now
+            const maxTime = new Date(now.getTime() + 30 * 24 * 60 * 60000); // 30 days from now
+            
+            if (selectedTime < minTime) {
+                alert('La hora de pickup debe ser al menos 30 minutos en adelante.');
+                this.value = '';
+                return;
+            }
+            
+            if (selectedTime > maxTime) {
+                alert('La hora de pickup no puede ser más de 30 días en adelante.');
+                this.value = '';
+                return;
+            }
+        }
+    });
 });
 </script>
 

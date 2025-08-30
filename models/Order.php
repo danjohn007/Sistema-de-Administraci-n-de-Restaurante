@@ -5,11 +5,12 @@ class Order extends BaseModel {
     public function getOrdersWithDetails($filters = []) {
         $query = "SELECT o.*, t.number as table_number, 
                          u.name as waiter_name, w.employee_code,
-                         COUNT(oi.id) as items_count
+                         COUNT(oi.id) as items_count,
+                         COALESCE(SUM(oi.subtotal), 0) as total
                   FROM {$this->table} o
-                  JOIN tables t ON o.table_id = t.id
-                  JOIN waiters w ON o.waiter_id = w.id
-                  JOIN users u ON w.user_id = u.id
+                  LEFT JOIN tables t ON o.table_id = t.id
+                  LEFT JOIN waiters w ON o.waiter_id = w.id
+                  LEFT JOIN users u ON w.user_id = u.id
                   LEFT JOIN order_items oi ON o.id = oi.order_id";
         
         $conditions = [];
@@ -33,6 +34,25 @@ class Order extends BaseModel {
         if (isset($filters['date'])) {
             $conditions[] = "DATE(o.created_at) = ?";
             $params[] = $filters['date'];
+        }
+        
+        if (isset($filters['pickup_date_from'])) {
+            $conditions[] = "DATE(o.pickup_datetime) >= ?";
+            $params[] = $filters['pickup_date_from'];
+        }
+        
+        if (isset($filters['pickup_date_to'])) {
+            $conditions[] = "DATE(o.pickup_datetime) <= ?";
+            $params[] = $filters['pickup_date_to'];
+        }
+        
+        if (isset($filters['is_pickup'])) {
+            $conditions[] = "o.is_pickup = ?";
+            $params[] = $filters['is_pickup'];
+        }
+        
+        if (isset($filters['future_orders']) && $filters['future_orders']) {
+            $conditions[] = "o.is_pickup = 1 AND DATE(o.pickup_datetime) > CURDATE()";
         }
         
         if (!empty($conditions)) {
@@ -281,6 +301,72 @@ class Order extends BaseModel {
         }
         
         return array_values($groupedOrders);
+    }
+    
+    public function getFuturePickupOrders($filters = []) {
+        $query = "SELECT o.*, t.number as table_number, 
+                         u.name as waiter_name, w.employee_code,
+                         COUNT(oi.id) as items_count,
+                         COALESCE(SUM(oi.subtotal), 0) as total
+                  FROM {$this->table} o
+                  LEFT JOIN tables t ON o.table_id = t.id
+                  LEFT JOIN waiters w ON o.waiter_id = w.id
+                  LEFT JOIN users u ON w.user_id = u.id
+                  LEFT JOIN order_items oi ON o.id = oi.order_id
+                  WHERE o.is_pickup = 1 AND DATE(o.pickup_datetime) > CURDATE()";
+        
+        $params = [];
+        
+        if (isset($filters['waiter_id'])) {
+            $query .= " AND o.waiter_id = ?";
+            $params[] = $filters['waiter_id'];
+        }
+        
+        if (isset($filters['status'])) {
+            $query .= " AND o.status = ?";
+            $params[] = $filters['status'];
+        }
+        
+        $query .= " GROUP BY o.id ORDER BY o.pickup_datetime ASC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+        
+        return $stmt->fetchAll();
+    }
+    
+    public function getTodaysOrders($filters = []) {
+        $today = date('Y-m-d');
+        
+        $query = "SELECT o.*, t.number as table_number, 
+                         u.name as waiter_name, w.employee_code,
+                         COUNT(oi.id) as items_count,
+                         COALESCE(SUM(oi.subtotal), 0) as total
+                  FROM {$this->table} o
+                  LEFT JOIN tables t ON o.table_id = t.id
+                  LEFT JOIN waiters w ON o.waiter_id = w.id
+                  LEFT JOIN users u ON w.user_id = u.id
+                  LEFT JOIN order_items oi ON o.id = oi.order_id
+                  WHERE (DATE(o.created_at) = ? OR (o.is_pickup = 1 AND DATE(o.pickup_datetime) = ?))";
+        
+        $params = [$today, $today];
+        
+        if (isset($filters['waiter_id'])) {
+            $query .= " AND o.waiter_id = ?";
+            $params[] = $filters['waiter_id'];
+        }
+        
+        if (isset($filters['status'])) {
+            $query .= " AND o.status = ?";
+            $params[] = $filters['status'];
+        }
+        
+        $query .= " GROUP BY o.id ORDER BY o.created_at DESC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+        
+        return $stmt->fetchAll();
     }
 }
 ?>

@@ -125,9 +125,19 @@ class PublicController extends BaseController {
             $pickupTime = strtotime($data['pickup_datetime']);
             $now = time();
             
-            if ($pickupTime <= $now) {
-                $errors['pickup_datetime'] = 'La fecha y hora de pickup debe ser en el futuro';
+            // Minimum 30 minutes advance notice
+            $minTime = $now + (30 * 60); // 30 minutes from now
+            
+            // Maximum 30 days advance
+            $maxTime = $now + (30 * 24 * 60 * 60); // 30 days from now
+            
+            if ($pickupTime <= $minTime) {
+                $errors['pickup_datetime'] = 'La fecha y hora de pickup debe ser al menos 30 minutos en adelante';
+            } elseif ($pickupTime > $maxTime) {
+                $errors['pickup_datetime'] = 'La fecha y hora de pickup no puede ser más de 30 días en adelante';
             }
+        } elseif (isset($data['is_pickup']) && empty($data['pickup_datetime'])) {
+            $errors['pickup_datetime'] = 'Debe seleccionar fecha y hora para pedidos pickup';
         }
         
         return $errors;
