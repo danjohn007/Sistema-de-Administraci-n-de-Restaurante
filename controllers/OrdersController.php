@@ -129,11 +129,13 @@ class OrdersController extends BaseController {
         } else {
             $orderItems = $this->orderModel->getOrderItems($id);
             $dishes = $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC');
+            $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
             
             $this->view('orders/edit', [
                 'order' => $order,
                 'items' => $orderItems,
-                'dishes' => $dishes
+                'dishes' => $dishes,
+                'tables' => $tables
             ]);
         }
     }
@@ -391,22 +393,29 @@ class OrdersController extends BaseController {
             $order = $this->orderModel->find($id);
             $orderItems = $this->orderModel->getOrderItems($id);
             $dishes = $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC');
+            $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
             
             $this->view('orders/edit', [
                 'errors' => $errors,
                 'order' => $order,
                 'items' => $orderItems,
                 'dishes' => $dishes,
+                'tables' => $tables,
                 'old' => $_POST
             ]);
             return;
         }
         
         try {
-            // Update order notes
+            // Prepare order data for update
             $orderData = [
                 'notes' => $_POST['notes'] ?? null
             ];
+            
+            // Only update table_id if provided and valid
+            if (isset($_POST['table_id']) && !empty($_POST['table_id'])) {
+                $orderData['table_id'] = $_POST['table_id'];
+            }
             
             $this->orderModel->update($id, $orderData);
             
@@ -433,21 +442,42 @@ class OrdersController extends BaseController {
             $order = $this->orderModel->find($id);
             $orderItems = $this->orderModel->getOrderItems($id);
             $dishes = $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC');
+            $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
             
             $this->view('orders/edit', [
                 'error' => 'Error al actualizar el pedido: ' . $e->getMessage(),
                 'order' => $order,
                 'items' => $orderItems,
                 'dishes' => $dishes,
+                'tables' => $tables,
                 'old' => $_POST
             ]);
         }
     }
     
     private function validateOrderInput($data, $excludeId = null) {
-        $errors = $this->validateInput($data, [
-            'table_id' => ['required' => true]
-        ]);
+        $errors = [];
+        
+        // Only require table_id for internal orders or pickup orders
+        // For public orders (non-pickup), table assignment is optional
+        $isPublicOrder = isset($data['is_public_order']) && $data['is_public_order'];
+        $isPickup = isset($data['is_pickup']) && $data['is_pickup'];
+        
+        // If we're editing an existing order, check if it's a public order
+        if ($excludeId) {
+            $order = $this->orderModel->find($excludeId);
+            if ($order) {
+                $isPublicOrder = !empty($order['customer_name']) || !empty($order['customer_phone']);
+                $isPickup = $order['is_pickup'] ?? false;
+            }
+        }
+        
+        // Table is required for internal orders and pickup orders
+        if (!$isPublicOrder || $isPickup) {
+            $errors = $this->validateInput($data, [
+                'table_id' => ['required' => true]
+            ]);
+        }
         
         // Validate waiter for admin and cashier users
         $user = $this->getCurrentUser();
