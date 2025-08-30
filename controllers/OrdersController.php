@@ -114,7 +114,7 @@ class OrdersController extends BaseController {
         
         $user = $this->getCurrentUser();
         
-        // Check permissions
+        // Check permissions - only waiters have restrictions, admins and cashiers can edit any order
         if ($user['role'] === ROLE_WAITER) {
             $waiter = $this->waiterModel->findBy('user_id', $user['id']);
             if (!$waiter || $order['waiter_id'] != $waiter['id']) {
@@ -122,6 +122,7 @@ class OrdersController extends BaseController {
                 return;
             }
         }
+        // Admin and cashier can edit any order
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->processEdit($id);
@@ -177,7 +178,7 @@ class OrdersController extends BaseController {
             }
             
             try {
-                $this->orderModel->updateOrderStatus($id, $status);
+                $this->orderModel->updateOrderStatusAndCustomerStats($id, $status);
                 $this->redirect('orders', 'success', 'Estado del pedido actualizado');
             } catch (Exception $e) {
                 $this->redirect('orders', 'error', 'Error al actualizar el estado: ' . $e->getMessage());

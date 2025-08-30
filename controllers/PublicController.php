@@ -3,12 +3,16 @@ class PublicController extends BaseController {
     private $dishModel;
     private $tableModel;
     private $orderModel;
+    private $reservationModel;
+    private $customerModel;
     
     public function __construct() {
         parent::__construct();
         $this->dishModel = new Dish();
         $this->tableModel = new Table();
         $this->orderModel = new Order();
+        $this->reservationModel = new Reservation();
+        $this->customerModel = new Customer();
     }
     
     public function menu() {
@@ -88,8 +92,14 @@ class PublicController extends BaseController {
             'pickup_datetime' => isset($_POST['pickup_datetime']) ? $_POST['pickup_datetime'] : null
         ];
         
+        $customerData = [
+            'name' => $_POST['customer_name'],
+            'phone' => $_POST['customer_phone'],
+            'birthday' => !empty($_POST['customer_birthday']) ? $_POST['customer_birthday'] : null
+        ];
+        
         try {
-            $orderId = $this->orderModel->createPublicOrderWithItems($orderData, $items);
+            $orderId = $this->orderModel->createPublicOrderWithCustomer($orderData, $items, $customerData);
             
             // Don't update table status for pickup orders
             if (!$orderData['is_pickup']) {
@@ -160,6 +170,102 @@ class PublicController extends BaseController {
         
         // Include public footer
         include BASE_PATH . '/views/layouts/public_footer.php';
+    }
+    
+    public function reservations() {
+        $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+        
+        $this->viewPublic('public/reservations', [
+            'tables' => $tables
+        ]);
+    }
+    
+    public function reservation() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->processPublicReservation();
+        } else {
+            $this->redirect('public/reservations');
+        }
+    }
+    
+    private function processPublicReservation() {
+        $errors = $this->validatePublicReservationInput($_POST);
+        
+        if (empty($errors)) {
+            try {
+                $reservationData = [
+                    'table_id' => $_POST['table_id'],
+                    'reservation_datetime' => $_POST['reservation_datetime'],
+                    'party_size' => $_POST['party_size'],
+                    'notes' => $_POST['notes'] ?? null,
+                    'status' => 'pendiente'
+                ];
+                
+                $customerData = [
+                    'name' => $_POST['customer_name'],
+                    'phone' => $_POST['customer_phone'],
+                    'birthday' => !empty($_POST['customer_birthday']) ? $_POST['customer_birthday'] : null
+                ];
+                
+                // Check table availability
+                if (!$this->reservationModel->checkTableAvailability($_POST['table_id'], $_POST['reservation_datetime'])) {
+                    throw new Exception('La mesa no está disponible en el horario seleccionado');
+                }
+                
+                $reservationId = $this->reservationModel->createReservationWithCustomer($reservationData, $customerData);
+                
+                $this->viewPublic('public/reservation_success', [
+                    'reservation_id' => $reservationId
+                ]);
+                
+            } catch (Exception $e) {
+                $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+                
+                $this->viewPublic('public/reservations', [
+                    'error' => 'Error al crear la reservación: ' . $e->getMessage(),
+                    'old' => $_POST,
+                    'tables' => $tables
+                ]);
+            }
+        } else {
+            $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+            
+            $this->viewPublic('public/reservations', [
+                'errors' => $errors,
+                'old' => $_POST,
+                'tables' => $tables
+            ]);
+        }
+    }
+    
+    private function validatePublicReservationInput($data) {
+        $errors = $this->validateInput($data, [
+            'customer_name' => ['required' => true, 'max' => 255],
+            'customer_phone' => ['required' => true, 'max' => 20],
+            'table_id' => ['required' => true],
+            'reservation_datetime' => ['required' => true],
+            'party_size' => ['required' => true, 'min' => 1, 'max' => 20]
+        ]);
+        
+        // Validate reservation datetime
+        if (isset($data['reservation_datetime']) && !empty($data['reservation_datetime'])) {
+            $reservationTime = strtotime($data['reservation_datetime']);
+            $now = time();
+            
+            // Minimum 30 minutes advance notice
+            $minTime = $now + (30 * 60);
+            
+            // Maximum 30 days advance
+            $maxTime = $now + (30 * 24 * 60 * 60);
+            
+            if ($reservationTime <= $minTime) {
+                $errors['reservation_datetime'] = 'La fecha y hora de reservación debe ser al menos 30 minutos en adelante';
+            } elseif ($reservationTime > $maxTime) {
+                $errors['reservation_datetime'] = 'La fecha y hora de reservación no puede ser más de 30 días en adelante';
+            }
+        }
+        
+        return $errors;
     }
 }
 ?>

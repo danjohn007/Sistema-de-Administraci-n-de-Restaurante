@@ -32,8 +32,8 @@
                 <div class="mb-3">
                     <label class="form-label fw-bold">Mesero:</label>
                     <div>
-                        <?= htmlspecialchars($order['waiter_name']) ?><br>
-                        <small class="text-muted"><?= htmlspecialchars($order['employee_code']) ?></small>
+                        <?= htmlspecialchars($order['waiter_name'] ?? '') ?><br>
+                        <small class="text-muted"><?= htmlspecialchars($order['employee_code'] ?? '') ?></small>
                     </div>
                 </div>
                 
