@@ -110,6 +110,23 @@
                     </div>
                     
                     <div class="mb-3">
+                        <label for="customer_birthday" class="form-label">Fecha de Cumpleaños (Opcional)</label>
+                        <input type="date" 
+                               class="form-control <?= isset($errors['customer_birthday']) ? 'is-invalid' : '' ?>" 
+                               id="customer_birthday" 
+                               name="customer_birthday" 
+                               value="<?= htmlspecialchars($old['customer_birthday'] ?? '') ?>">
+                        <?php if (isset($errors['customer_birthday'])): ?>
+                            <div class="invalid-feedback">
+                                <?= htmlspecialchars($errors['customer_birthday']) ?>
+                            </div>
+                        <?php endif; ?>
+                        <div class="form-text">
+                            Ayúdanos a celebrar contigo y obtener ofertas especiales
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
                         <label for="notes" class="form-label">Notas del Pedido</label>
                         <textarea class="form-control" 
                                   id="notes" 

@@ -17,8 +17,32 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-success">
         <div class="container">
             <a class="navbar-brand" href="<?= BASE_URL ?>/public/menu">
-                <i class="bi bi-shop"></i> <?= APP_NAME ?> - Menú
+                <i class="bi bi-shop"></i> <?= APP_NAME ?>
             </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#publicNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="publicNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?= BASE_URL ?>/public/menu">
+                            <i class="bi bi-cup-hot"></i> Menú & Pedidos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?= BASE_URL ?>/public/reservations">
+                            <i class="bi bi-calendar-check"></i> Reservaciones
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?= BASE_URL ?>/auth/login">
+                            <i class="bi bi-box-arrow-in-right"></i> Staff Login
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </nav>
 

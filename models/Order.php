@@ -368,5 +368,69 @@ class Order extends BaseModel {
         
         return $stmt->fetchAll();
     }
+    
+    public function createPublicOrderWithCustomer($orderData, $items, $customerData) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Create or find customer
+            $customerModel = new Customer();
+            $customer = $customerModel->findBy('phone', $customerData['phone']);
+            
+            if (!$customer) {
+                $customerId = $customerModel->create($customerData);
+            } else {
+                // Update customer info if provided
+                if (isset($customerData['name']) && $customerData['name'] !== $customer['name']) {
+                    $customerModel->update($customer['id'], ['name' => $customerData['name']]);
+                }
+                if (isset($customerData['birthday']) && $customerData['birthday'] !== $customer['birthday']) {
+                    $customerModel->update($customer['id'], ['birthday' => $customerData['birthday']]);
+                }
+                $customerId = $customer['id'];
+            }
+            
+            // Add customer_id to order data
+            $orderData['customer_id'] = $customerId;
+            
+            // Create order with items
+            $orderId = $this->createPublicOrderWithItems($orderData, $items);
+            
+            $this->db->commit();
+            return $orderId;
+            
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+    }
+    
+    public function updateOrderStatusAndCustomerStats($orderId, $newStatus) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Get order with customer info
+            $order = $this->find($orderId);
+            if (!$order) {
+                throw new Exception('Pedido no encontrado');
+            }
+            
+            // Update order status
+            $this->update($orderId, ['status' => $newStatus]);
+            
+            // Update customer stats if order is completed and has customer
+            if ($newStatus === ORDER_DELIVERED && $order['customer_id']) {
+                $customerModel = new Customer();
+                $customerModel->updateStats($order['customer_id'], $order['total']);
+            }
+            
+            $this->db->commit();
+            return true;
+            
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+    }
 }
 ?>

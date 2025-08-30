@@ -63,6 +63,12 @@
                     </li>
                     <?php endif; ?>
                     
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?= BASE_URL ?>/reservations">
+                            <i class="bi bi-calendar-check"></i> Reservaciones
+                        </a>
+                    </li>
+                    
                     <?php if (in_array($_SESSION['user_role'], [ROLE_ADMIN, ROLE_CASHIER])): ?>
                     <li class="nav-item">
                         <a class="nav-link" href="<?= BASE_URL ?>/tickets">

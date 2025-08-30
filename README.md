@@ -108,6 +108,24 @@ Un sistema completo de administración para restaurantes desarrollado en PHP pur
 - Reportes de ventas por fecha y método de pago
 - Numeración automática de tickets con formato único
 
+### Sistema de Reservaciones (NUEVO)
+- **Reservaciones Públicas**: Formulario público para que clientes hagan reservaciones
+- **Gestión Administrativa**: Panel completo para administrar reservaciones
+- **Selección de Mesa**: Visualización de mesas disponibles con capacidades
+- **Validación de Disponibilidad**: Verificación automática con buffer de 2 horas
+- **Estados de Reservación**: pendiente → confirmada → completada/cancelada
+- **Información del Cliente**: Nombre, teléfono, cumpleaños (opcional)
+- **Seguimiento de Clientes**: Estadísticas de visitas y gasto total
+- **Filtros y Búsqueda**: Por fecha, estado, mesa, cliente
+
+### Sistema de Clientes y Estadísticas (NUEVO)
+- **Tracking Automático**: Vinculación de pedidos con clientes por teléfono
+- **Estadísticas de Visitas**: Conteo automático de visitas por cliente
+- **Historial de Gastos**: Seguimiento del gasto total por cliente
+- **Mejores Clientes**: Rankings por visitas y consumo
+- **Cumpleaños**: Seguimiento para ofertas especiales
+- **Integración Completa**: Funciona con pedidos y reservaciones
+
 ## 🛠️ Tecnologías Utilizadas
 
 - **Backend**: PHP 7.4+ (sin framework)
@@ -478,6 +496,66 @@ Edita `public/css/style.css` para:
 
 ## 📋 Changelog
 
+### v1.3.1 - 2024-12-30
+
+#### Nuevo Módulo de Reservaciones (Completamente Implementado)
+- **Reservaciones Públicas**: 
+  - Formulario público para hacer reservaciones: `/public/reservations`
+  - Selección de mesa, fecha/hora, número de personas
+  - Recopilación de información del cliente (nombre, teléfono, cumpleaños opcional)
+  - Validación de disponibilidad de mesa con buffer de 2 horas
+  - Confirmación automática con número de reservación
+- **Gestión de Reservaciones**:
+  - Panel administrativo completo: `/reservations`
+  - Estados: pendiente → confirmada → completada/cancelada
+  - Filtros por día (hoy, próximas, todas)
+  - Vista detallada con información completa del cliente y reservación
+  - Edición de reservaciones pendientes
+- **Sistema de Clientes**:
+  - Tracking automático de clientes por teléfono
+  - Estadísticas de visitas y gasto total
+  - Integración con pedidos para mejores análisis
+  - Seguimiento de cumpleaños para ofertas especiales
+  - Rankings de mejores clientes por visitas y consumo
+
+#### Mejoras en Permisos y Edición de Pedidos
+- **Permisos Ampliados**: Cajeros y administradores pueden editar cualquier pedido
+- **Meseros**: Mantienen restricción a sus propios pedidos únicamente
+- **Integración de Clientes**: Los pedidos ahora se vinculan automáticamente con clientes
+
+#### Correcciones de Errores
+- **htmlspecialchars Deprecation**: Corregido en `/views/orders/view.php` para evitar errores con valores null
+- **Customer Data Integration**: Los pedidos públicos ahora crean/actualizan información de clientes automáticamente
+- **Pickup Validation**: Confirmada validación de 30 minutos mínimos (funcional)
+
+#### Nuevas Rutas y Funcionalidades
+```
+Módulo de Reservaciones (Público):
+- GET /public/reservations - Formulario de reservación pública
+- POST /public/reservation - Procesar reservación pública
+
+Módulo de Reservaciones (Administrativo):
+- GET /reservations - Lista de reservaciones (filtros: today, future, all)
+- GET/POST /reservations/create - Crear nueva reservación
+- GET /reservations/show/{id} - Ver detalles de reservación
+- GET/POST /reservations/edit/{id} - Editar reservación
+- POST /reservations/updateStatus/{id} - Cambiar estado de reservación
+- DELETE /reservations/delete/{id} - Eliminar reservación (solo admin)
+
+Estadísticas de Clientes:
+- Ranking de clientes por visitas y consumo
+- Integración automática con pedidos completados
+- Seguimiento de cumpleaños y ofertas especiales
+```
+
+#### Base de Datos
+- **Nuevas Tablas**: 
+  - `reservations` (gestión completa de reservaciones)
+  - `customers` (tracking de clientes con estadísticas)
+- **Modificaciones**: 
+  - `orders.customer_id` (FK a customers para estadísticas)
+- **Índices**: Optimización para consultas de reservaciones y clientes
+
 ### v1.3.0 - 2024-12-23
 
 #### Nuevo Módulo Financiero (Completamente Implementado)
@@ -687,6 +765,31 @@ Para soporte técnico o preguntas:
 - Verificar los logs de error de Apache/PHP
 
 ## 🔄 Actualizaciones
+
+### Instalación del Módulo de Reservaciones (v1.3.1)
+
+Para instalar el nuevo módulo de reservaciones en una instalación existente:
+
+1. **Respaldar la base de datos**:
+   ```bash
+   mysqldump -u usuario -p ejercito_restaurant > backup_antes_reservaciones.sql
+   ```
+
+2. **Ejecutar el script de migración**:
+   ```sql
+   mysql -u usuario -p ejercito_restaurant < database/reservations_module.sql
+   ```
+
+3. **Verificar nuevas tablas**:
+   - `reservations` (reservaciones)
+   - `customers` (clientes)
+   - Nueva columna `customer_id` en tabla `orders`
+
+4. **Verificar nuevas funcionalidades**:
+   - Reservaciones públicas: `/public/reservations`
+   - Gestión de reservaciones: `/reservations` (todos los roles)
+   - Tracking de clientes con estadísticas de visitas y gastos
+   - Integración de cumpleaños para ofertas especiales
 
 ### Instalación del Módulo Financiero (v1.3.0)
 
