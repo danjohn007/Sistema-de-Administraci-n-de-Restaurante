@@ -31,6 +31,11 @@ class Order extends BaseModel {
             $params[] = $filters['table_id'];
         }
         
+        if (isset($filters['id'])) {
+            $conditions[] = "o.id = ?";
+            $params[] = $filters['id'];
+        }
+        
         if (isset($filters['date'])) {
             $conditions[] = "DATE(o.created_at) = ?";
             $params[] = $filters['date'];

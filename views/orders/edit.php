@@ -31,8 +31,48 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Mesa:</label>
-                        <span class="badge bg-info fs-6">Mesa <?= $order['table_id'] ?></span>
+                        <?php if ($order['table_id']): ?>
+                            <span class="badge bg-info fs-6">Mesa <?= $order['table_id'] ?></span>
+                        <?php else: ?>
+                            <span class="badge bg-secondary fs-6">Sin Mesa Asignada</span>
+                        <?php endif; ?>
                     </div>
+                    
+                    <?php 
+                    // Show table assignment option for public orders (those with customer info)
+                    $isPublicOrder = !empty($order['customer_name']) || !empty($order['customer_phone']);
+                    if ($isPublicOrder):
+                    ?>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Cliente:</label>
+                        <div>
+                            <?php if (!empty($order['customer_name'])): ?>
+                                <?= htmlspecialchars($order['customer_name']) ?><br>
+                            <?php endif; ?>
+                            <?php if (!empty($order['customer_phone'])): ?>
+                                <small class="text-muted">Tel: <?= htmlspecialchars($order['customer_phone']) ?></small>
+                            <?php endif; ?>
+                            <?php if ($order['is_pickup'] ?? false): ?>
+                                <br><span class="badge bg-info">Pickup</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="table_id" class="form-label">Asignar Mesa (Opcional)</label>
+                        <select class="form-select" id="table_id" name="table_id">
+                            <option value="">Seleccionar mesa...</option>
+                            <?php 
+                            foreach ($tables as $table): 
+                            ?>
+                                <option value="<?= $table['id'] ?>" <?= $order['table_id'] == $table['id'] ? 'selected' : '' ?>>
+                                    Mesa <?= $table['number'] ?> (Capacidad: <?= $table['capacity'] ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="form-text text-muted">Para pedidos públicos, la asignación de mesa es opcional</small>
+                    </div>
+                    <?php endif; ?>
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold">Estado:</label>
