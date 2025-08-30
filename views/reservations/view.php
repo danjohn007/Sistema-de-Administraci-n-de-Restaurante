@@ -34,10 +34,28 @@
                 </div>
                 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Mesa:</label>
+                    <label class="form-label fw-bold">Mesas Asignadas:</label>
                     <div>
-                        <span class="badge bg-info fs-6">Mesa <?= $reservation['table_number'] ?></span>
-                        <small class="text-muted ms-2">(Capacidad: <?= $reservation['table_capacity'] ?> personas)</small>
+                        <?php if (!empty($reservation['table_numbers'])): ?>
+                            <span class="badge bg-info fs-6">Mesa<?= strpos($reservation['table_numbers'], ',') !== false ? 's' : '' ?> <?= $reservation['table_numbers'] ?></span>
+                            <small class="text-muted ms-2">(Capacidad total: <?= $reservation['total_capacity'] ?? 'N/A' ?> personas)</small>
+                        <?php else: ?>
+                            <span class="badge bg-secondary fs-6">Sin mesa asignada</span>
+                            <small class="text-muted ms-2">(Se asignará automáticamente)</small>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Mesero Asignado:</label>
+                    <div>
+                        <?php if (!empty($reservation['waiter_name'])): ?>
+                            <span class="badge bg-success fs-6"><?= htmlspecialchars($reservation['waiter_name']) ?></span>
+                            <small class="text-muted ms-2">(<?= htmlspecialchars($reservation['waiter_code']) ?>)</small>
+                        <?php else: ?>
+                            <span class="badge bg-secondary fs-6">Sin asignar</span>
+                            <small class="text-muted ms-2">(Se asignará durante confirmación)</small>
+                        <?php endif; ?>
                     </div>
                 </div>
                 

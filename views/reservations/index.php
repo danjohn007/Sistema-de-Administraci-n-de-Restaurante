@@ -53,7 +53,8 @@
                             <th>ID</th>
                             <th>Cliente</th>
                             <th>Teléfono</th>
-                            <th>Mesa</th>
+                            <th>Mesas</th>
+                            <th>Mesero</th>
                             <th>Fecha/Hora</th>
                             <th>Personas</th>
                             <th>Estado</th>
@@ -79,12 +80,29 @@
                                 </a>
                             </td>
                             <td>
-                                <span class="badge bg-info">
-                                    Mesa <?= $reservation['table_number'] ?>
-                                </span>
-                                <small class="text-muted">
-                                    (<?= $reservation['table_capacity'] ?> personas)
-                                </small>
+                                <?php if (!empty($reservation['table_numbers'])): ?>
+                                    <span class="badge bg-info">
+                                        Mesa<?= strpos($reservation['table_numbers'], ',') !== false ? 's' : '' ?> <?= $reservation['table_numbers'] ?>
+                                    </span>
+                                    <br><small class="text-muted">
+                                        (Capacidad total: <?= $reservation['total_capacity'] ?? 'N/A' ?> personas)
+                                    </small>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary">Sin mesa asignada</span>
+                                    <br><small class="text-muted">(Se asignará automáticamente)</small>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if (!empty($reservation['waiter_name'])): ?>
+                                    <span class="badge bg-success">
+                                        <?= htmlspecialchars($reservation['waiter_name']) ?>
+                                    </span>
+                                    <br><small class="text-muted">
+                                        (<?= htmlspecialchars($reservation['waiter_code']) ?>)
+                                    </small>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary">Sin asignar</span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <?= date('d/m/Y', strtotime($reservation['reservation_datetime'])) ?><br>
