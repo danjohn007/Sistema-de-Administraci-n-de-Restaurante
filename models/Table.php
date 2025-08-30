@@ -103,5 +103,21 @@ class Table extends BaseModel {
     public function getWaiterTables($waiterId) {
         return $this->findAll(['waiter_id' => $waiterId, 'active' => 1], 'number ASC');
     }
+    
+    public function getAvailableTablesForReservationEdit($reservationId) {
+        // Get available tables plus tables already assigned to this reservation
+        $query = "SELECT DISTINCT t.* FROM {$this->table} t 
+                  WHERE t.active = 1 
+                  AND (t.status = ? OR t.id IN (
+                      SELECT rt.table_id FROM reservation_tables rt 
+                      WHERE rt.reservation_id = ?
+                  ))
+                  ORDER BY t.number ASC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([TABLE_AVAILABLE, $reservationId]);
+        
+        return $stmt->fetchAll();
+    }
 }
 ?>

@@ -39,7 +39,8 @@ class ReservationsController extends BaseController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->processCreate();
         } else {
-            $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+            // Show only available tables for reservation
+            $tables = $this->tableModel->findAll(['active' => 1, 'status' => TABLE_AVAILABLE], 'number ASC');
             
             // Get waiters for assignment (available to all user roles)
             $waiterModel = new Waiter();
@@ -77,7 +78,8 @@ class ReservationsController extends BaseController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->processEdit($id);
         } else {
-            $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+            // Show available tables plus tables already assigned to this reservation
+            $tables = $this->tableModel->getAvailableTablesForReservationEdit($id);
             $reservationTables = $this->reservationModel->getReservationTables($id);
             
             // Get waiters for assignment
@@ -183,7 +185,8 @@ class ReservationsController extends BaseController {
                 $this->redirect('reservations/show/' . $reservationId, 'success', 'Reservación creada correctamente');
                 
             } catch (Exception $e) {
-                $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+                // Show only available tables for reservation
+                $tables = $this->tableModel->findAll(['active' => 1, 'status' => TABLE_AVAILABLE], 'number ASC');
                 $waiterModel = new Waiter();
                 $waiters = $waiterModel->getWaitersWithUsers();
                 
@@ -195,7 +198,8 @@ class ReservationsController extends BaseController {
                 ]);
             }
         } else {
-            $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+            // Show only available tables for reservation
+            $tables = $this->tableModel->findAll(['active' => 1, 'status' => TABLE_AVAILABLE], 'number ASC');
             $waiterModel = new Waiter();
             $waiters = $waiterModel->getWaitersWithUsers();
             
