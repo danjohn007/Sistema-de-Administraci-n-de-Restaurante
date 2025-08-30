@@ -44,6 +44,21 @@
                     if ($isPublicOrder):
                     ?>
                     <div class="mb-3">
+                        <label class="form-label fw-bold">Cliente:</label>
+                        <div>
+                            <?php if (!empty($order['customer_name'])): ?>
+                                <?= htmlspecialchars($order['customer_name']) ?><br>
+                            <?php endif; ?>
+                            <?php if (!empty($order['customer_phone'])): ?>
+                                <small class="text-muted">Tel: <?= htmlspecialchars($order['customer_phone']) ?></small>
+                            <?php endif; ?>
+                            <?php if ($order['is_pickup'] ?? false): ?>
+                                <br><span class="badge bg-info">Pickup</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
                         <label for="table_id" class="form-label">Asignar Mesa (Opcional)</label>
                         <select class="form-select" id="table_id" name="table_id">
                             <option value="">Seleccionar mesa...</option>
