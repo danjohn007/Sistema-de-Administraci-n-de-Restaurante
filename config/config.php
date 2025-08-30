@@ -5,8 +5,8 @@ define('APP_VERSION', '1.0.0');
 
 // Database configuration
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'ejercito_restaurant');
-define('DB_USER', 'ejercito_restaurant');
+define('DB_NAME', 'exhacien_restaurante');
+define('DB_USER', 'exhacien_restaurante');
 define('DB_PASS', 'Danjohn007!');
 define('DB_CHARSET', 'utf8mb4');
 
