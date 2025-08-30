@@ -207,12 +207,24 @@ class PublicController extends BaseController {
         if (empty($errors)) {
             try {
                 $reservationData = [
-                    'table_id' => !empty($_POST['table_id']) ? $_POST['table_id'] : null,
                     'reservation_datetime' => $_POST['reservation_datetime'],
                     'party_size' => $_POST['party_size'],
                     'notes' => $_POST['notes'] ?? null,
                     'status' => 'pendiente'
                 ];
+                
+                // Handle table selection (can be multiple or none)
+                $tableIds = [];
+                if (!empty($_POST['table_ids']) && is_array($_POST['table_ids'])) {
+                    $tableIds = array_filter($_POST['table_ids'], function($id) {
+                        return !empty($id) && is_numeric($id);
+                    });
+                } elseif (!empty($_POST['table_id'])) {
+                    // Support single table selection for backwards compatibility
+                    $tableIds = [$_POST['table_id']];
+                }
+                
+                $reservationData['table_ids'] = $tableIds;
                 
                 $customerData = [
                     'name' => $_POST['customer_name'],
@@ -220,9 +232,11 @@ class PublicController extends BaseController {
                     'birthday' => !empty($_POST['customer_birthday']) ? $_POST['customer_birthday'] : null
                 ];
                 
-                // Check table availability only if a table is selected
-                if (!empty($reservationData['table_id']) && !$this->reservationModel->checkTableAvailability($reservationData['table_id'], $_POST['reservation_datetime'])) {
-                    throw new Exception('La mesa no está disponible en el horario seleccionado');
+                // Check table availability if tables are specified
+                if (!empty($tableIds)) {
+                    if (!$this->reservationModel->checkTableAvailability($tableIds, $_POST['reservation_datetime'])) {
+                        throw new Exception('Una o más mesas no están disponibles en el horario seleccionado');
+                    }
                 }
                 
                 $reservationId = $this->reservationModel->createReservationWithCustomer($reservationData, $customerData);
