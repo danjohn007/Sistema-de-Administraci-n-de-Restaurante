@@ -1,7 +1,8 @@
-<?php $title = 'Gestión de Menú'; ?>
+<?php $title = ($user['role'] === ROLE_WAITER) ? 'Consultar Menú' : 'Gestión de Menú'; ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="bi bi-cup-hot"></i> Gestión de Menú</h1>
+    <h1><i class="bi bi-cup-hot"></i> <?= ($user['role'] === ROLE_WAITER) ? 'Consultar Menú' : 'Gestión de Menú' ?></h1>
+    <?php if ($user['role'] === ROLE_ADMIN): ?>
     <div>
         <a href="<?= BASE_URL ?>/dishes/categories" class="btn btn-outline-primary me-2">
             <i class="bi bi-tags"></i> Gestionar Categorías
@@ -10,6 +11,7 @@
             <i class="bi bi-plus-circle"></i> Nuevo Platillo
         </a>
     </div>
+    <?php endif; ?>
 </div>
 
 <!-- Filtros -->
@@ -53,9 +55,11 @@
             <div class="text-center py-4">
                 <i class="bi bi-cup-hot display-4 text-muted"></i>
                 <p class="mt-3 text-muted">No se encontraron platillos</p>
+                <?php if ($user['role'] === ROLE_ADMIN): ?>
                 <a href="<?= BASE_URL ?>/dishes/create" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Crear Primer Platillo
                 </a>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <div class="table-responsive">
@@ -108,6 +112,7 @@
                                        class="btn btn-outline-info" title="Ver Detalles">
                                         <i class="bi bi-eye"></i>
                                     </a>
+                                    <?php if ($user['role'] === ROLE_ADMIN): ?>
                                     <a href="<?= BASE_URL ?>/dishes/edit/<?= $dish['id'] ?>" 
                                        class="btn btn-outline-primary" title="Editar">
                                         <i class="bi bi-pencil"></i>
@@ -117,6 +122,7 @@
                                             onclick="confirmDelete(<?= $dish['id'] ?>, '<?= htmlspecialchars($dish['name'], ENT_QUOTES) ?>')">
                                         <i class="bi bi-trash"></i>
                                     </button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>

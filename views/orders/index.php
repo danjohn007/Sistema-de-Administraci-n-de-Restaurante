@@ -42,7 +42,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Mesa</th>
-                        <th>Mesero</th>
+                        <th>Mesero/Cliente</th>
                         <th>Estado</th>
                         <th>Total</th>
                         <th>Items</th>
@@ -58,8 +58,17 @@
                             <span class="badge bg-info">Mesa <?= $order['table_number'] ?></span>
                         </td>
                         <td>
-                            <small class="text-muted"><?= htmlspecialchars($order['employee_code']) ?></small><br>
-                            <?= htmlspecialchars($order['waiter_name']) ?>
+                            <?php if ($order['status'] === ORDER_PENDING_CONFIRMATION || !empty($order['customer_name'])): ?>
+                                <i class="bi bi-person-fill text-info"></i> 
+                                <small class="text-muted">Cliente:</small><br>
+                                <?= htmlspecialchars($order['customer_name'] ?? 'Público') ?>
+                                <?php if ($order['is_pickup'] ?? false): ?>
+                                    <br><span class="badge bg-info">Pickup</span>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <small class="text-muted"><?= htmlspecialchars($order['employee_code'] ?? '') ?></small><br>
+                                <?= htmlspecialchars($order['waiter_name'] ?? 'Sin asignar') ?>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <span class="badge status-<?= $order['status'] ?>">
@@ -82,7 +91,14 @@
                                    title="Ver detalles">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <?php if ($order['status'] !== ORDER_DELIVERED): ?>
+                                <?php if ($order['status'] === ORDER_PENDING_CONFIRMATION && ($user['role'] === ROLE_ADMIN || $user['role'] === ROLE_CASHIER)): ?>
+                                <a href="<?= BASE_URL ?>/orders/confirmPublicOrder/<?= $order['id'] ?>" 
+                                   class="btn btn-success btn-sm" 
+                                   title="Confirmar pedido público">
+                                    <i class="bi bi-check-circle"></i>
+                                </a>
+                                <?php endif; ?>
+                                <?php if ($order['status'] !== ORDER_DELIVERED && $order['status'] !== ORDER_PENDING_CONFIRMATION): ?>
                                 <a href="<?= BASE_URL ?>/orders/edit/<?= $order['id'] ?>" 
                                    class="btn btn-outline-warning btn-sm" 
                                    title="Editar">
@@ -110,53 +126,67 @@
 
 <!-- Quick Stats -->
 <div class="row mt-4">
-    <div class="col-md-3">
+    <?php if ($user['role'] === ROLE_ADMIN || $user['role'] === ROLE_CASHIER): ?>
+    <div class="col-md-2 col-sm-6 mb-3">
+        <div class="card text-center border-danger">
+            <div class="card-body">
+                <i class="bi bi-exclamation-triangle display-6 text-danger"></i>
+                <h6 class="mt-2">Sin Confirmar</h6>
+                <h4 class="text-danger">
+                    <?= count(array_filter($orders, function($o) { return $o['status'] === ORDER_PENDING_CONFIRMATION; })) ?>
+                </h4>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+    <div class="col-md-2 col-sm-6 mb-3">
         <div class="card text-center border-primary">
             <div class="card-body">
-                <i class="bi bi-clock-history display-4 text-primary"></i>
-                <h5 class="mt-3">Pendientes</h5>
-                <h3 class="text-primary">
+                <i class="bi bi-clock-history display-6 text-primary"></i>
+                <h6 class="mt-2">Pendientes</h6>
+                <h4 class="text-primary">
                     <?= count(array_filter($orders, function($o) { return $o['status'] === ORDER_PENDING; })) ?>
-                </h3>
+                </h4>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2 col-sm-6 mb-3">
         <div class="card text-center border-warning">
             <div class="card-body">
-                <i class="bi bi-gear display-4 text-warning"></i>
-                <h5 class="mt-3">En Preparación</h5>
-                <h3 class="text-warning">
+                <i class="bi bi-gear display-6 text-warning"></i>
+                <h6 class="mt-2">En Preparación</h6>
+                <h4 class="text-warning">
                     <?= count(array_filter($orders, function($o) { return $o['status'] === ORDER_PREPARING; })) ?>
-                </h3>
+                </h4>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2 col-sm-6 mb-3">
         <div class="card text-center border-success">
             <div class="card-body">
-                <i class="bi bi-check-circle display-4 text-success"></i>
-                <h5 class="mt-3">Listos</h5>
-                <h3 class="text-success">
+                <i class="bi bi-check-circle display-6 text-success"></i>
+                <h6 class="mt-2">Listos</h6>
+                <h4 class="text-success">
                     <?= count(array_filter($orders, function($o) { return $o['status'] === ORDER_READY; })) ?>
-                </h3>
+                </h4>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2 col-sm-6 mb-3">
         <div class="card text-center border-info">
             <div class="card-body">
-                <i class="bi bi-truck display-4 text-info"></i>
-                <h5 class="mt-3">Entregados</h5>
-                <h3 class="text-info">
+                <i class="bi bi-truck display-6 text-info"></i>
+                <h6 class="mt-2">Entregados</h6>
+                <h4 class="text-info">
                     <?= count(array_filter($orders, function($o) { return $o['status'] === ORDER_DELIVERED; })) ?>
-                </h3>
+                </h4>
             </div>
         </div>
     </div>
 </div>
 
 <style>
+.status-pendiente_confirmacion { background-color: #dc3545; color: #fff; }
 .status-pendiente { background-color: #ffc107; color: #000; }
 .status-en_preparacion { background-color: #fd7e14; color: #fff; }
 .status-listo { background-color: #198754; color: #fff; }
@@ -166,6 +196,7 @@
 <?php
 function getOrderStatusText($status) {
     $statusTexts = [
+        ORDER_PENDING_CONFIRMATION => 'Pendiente Confirmación',
         ORDER_PENDING => 'Pendiente',
         ORDER_PREPARING => 'En Preparación',
         ORDER_READY => 'Listo',

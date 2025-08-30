@@ -1,10 +1,12 @@
-<?php $title = 'Nuevo Pedido'; ?>
+<?php $title = 'Menú Público'; ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="bi bi-plus-circle"></i> Nuevo Pedido</h1>
-    <a href="<?= BASE_URL ?>/orders" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Volver a Pedidos
-    </a>
+<div class="row">
+    <div class="col-12">
+        <h1 class="text-center mb-4">
+            <i class="bi bi-cup-hot"></i> Nuestro Menú
+        </h1>
+        <p class="text-center lead mb-5">Haga su pedido para recoger en nuestro restaurante o para mesa</p>
+    </div>
 </div>
 
 <?php if (isset($error)): ?>
@@ -13,17 +15,47 @@
     </div>
 <?php endif; ?>
 
-<form method="POST" action="<?= BASE_URL ?>/orders/create" id="orderForm">
+<form method="POST" action="<?= BASE_URL ?>/public/order" id="publicOrderForm">
     <div class="row">
         <!-- Order Details -->
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-success text-white">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-info-circle"></i> Detalles del Pedido
+                        <i class="bi bi-info-circle"></i> Información del Pedido
                     </h5>
                 </div>
                 <div class="card-body">
+                    <div class="mb-3">
+                        <label for="customer_name" class="form-label">Nombre Completo *</label>
+                        <input type="text" 
+                               class="form-control <?= isset($errors['customer_name']) ? 'is-invalid' : '' ?>" 
+                               id="customer_name" 
+                               name="customer_name" 
+                               value="<?= htmlspecialchars($old['customer_name'] ?? '') ?>"
+                               required>
+                        <?php if (isset($errors['customer_name'])): ?>
+                            <div class="invalid-feedback">
+                                <?= htmlspecialchars($errors['customer_name']) ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="customer_phone" class="form-label">Teléfono *</label>
+                        <input type="tel" 
+                               class="form-control <?= isset($errors['customer_phone']) ? 'is-invalid' : '' ?>" 
+                               id="customer_phone" 
+                               name="customer_phone" 
+                               value="<?= htmlspecialchars($old['customer_phone'] ?? '') ?>"
+                               required>
+                        <?php if (isset($errors['customer_phone'])): ?>
+                            <div class="invalid-feedback">
+                                <?= htmlspecialchars($errors['customer_phone']) ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    
                     <div class="mb-3">
                         <label for="table_id" class="form-label">Mesa *</label>
                         <select class="form-select <?= isset($errors['table_id']) ? 'is-invalid' : '' ?>" 
@@ -35,8 +67,7 @@
                                 <option value="<?= $table['id'] ?>" 
                                         <?= (($old['table_id'] ?? '') == $table['id']) ? 'selected' : '' ?>>
                                     Mesa <?= $table['number'] ?> 
-                                    (Cap: <?= $table['capacity'] ?>) 
-                                    - <?= ucfirst($table['status']) ?>
+                                    (Capacidad: <?= $table['capacity'] ?> personas)
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -47,29 +78,35 @@
                         <?php endif; ?>
                     </div>
                     
-                    <?php if ($user['role'] === ROLE_ADMIN || $user['role'] === ROLE_CASHIER): ?>
                     <div class="mb-3">
-                        <label for="waiter_id" class="form-label">Mesero *</label>
-                        <select class="form-select <?= isset($errors['waiter_id']) ? 'is-invalid' : '' ?>" 
-                                id="waiter_id" 
-                                name="waiter_id" 
-                                required>
-                            <option value="">Seleccionar mesero...</option>
-                            <?php foreach ($waiters as $waiter): ?>
-                                <option value="<?= $waiter['id'] ?>" 
-                                        <?= (($old['waiter_id'] ?? '') == $waiter['id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($waiter['name']) ?> 
-                                    (<?= htmlspecialchars($waiter['employee_code']) ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <?php if (isset($errors['waiter_id'])): ?>
+                        <div class="form-check">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="is_pickup" 
+                                   name="is_pickup"
+                                   <?= isset($old['is_pickup']) ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="is_pickup">
+                                <strong>Pedido para llevar (Pickup)</strong>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="pickup_datetime_container" style="display: none;">
+                        <label for="pickup_datetime" class="form-label">Fecha y Hora de Pickup</label>
+                        <input type="datetime-local" 
+                               class="form-control <?= isset($errors['pickup_datetime']) ? 'is-invalid' : '' ?>" 
+                               id="pickup_datetime" 
+                               name="pickup_datetime"
+                               value="<?= htmlspecialchars($old['pickup_datetime'] ?? '') ?>">
+                        <?php if (isset($errors['pickup_datetime'])): ?>
                             <div class="invalid-feedback">
-                                <?= htmlspecialchars($errors['waiter_id']) ?>
+                                <?= htmlspecialchars($errors['pickup_datetime']) ?>
                             </div>
                         <?php endif; ?>
+                        <div class="form-text">
+                            Seleccione cuándo desea recoger su pedido
+                        </div>
                     </div>
-                    <?php endif; ?>
                     
                     <div class="mb-3">
                         <label for="notes" class="form-label">Notas del Pedido</label>
@@ -83,7 +120,7 @@
                     <div class="card bg-light">
                         <div class="card-body">
                             <h6 class="card-title">Total del Pedido</h6>
-                            <h3 class="text-primary mb-0" id="orderTotal">$0.00</h3>
+                            <h3 class="text-success mb-0" id="orderTotal">$0.00</h3>
                         </div>
                     </div>
                 </div>
@@ -119,22 +156,20 @@
                         endif; 
                     ?>
                         <div class="col-md-6 mb-3">
-                            <div class="card dish-card" data-dish-id="<?= $dish['id'] ?>">
+                            <div class="card dish-card h-100" data-dish-id="<?= $dish['id'] ?>">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h6 class="card-title mb-0"><?= htmlspecialchars($dish['name']) ?></h6>
-                                        <span class="badge bg-success">$<?= number_format($dish['price'], 2) ?></span>
+                                        <span class="badge bg-success fs-6">$<?= number_format($dish['price'], 2) ?></span>
                                     </div>
                                     <?php if ($dish['description']): ?>
-                                        <p class="text-muted small mb-2"><?= htmlspecialchars($dish['description']) ?></p>
+                                        <p class="text-muted small mb-3"><?= htmlspecialchars($dish['description']) ?></p>
                                     <?php endif; ?>
                                     <div class="input-group input-group-sm">
                                         <button type="button" class="btn btn-outline-secondary btn-minus" data-dish-id="<?= $dish['id'] ?>">-</button>
-                                        <input type="number" 
-                                               class="form-control text-center dish-quantity" 
+                                        <input type="hidden" 
                                                name="items[<?= $dish['id'] ?>][dish_id]" 
-                                               value="<?= $dish['id'] ?>"
-                                               style="display: none;">
+                                               value="<?= $dish['id'] ?>">
                                         <input type="number" 
                                                class="form-control text-center dish-quantity" 
                                                name="items[<?= $dish['id'] ?>][quantity]" 
@@ -162,24 +197,42 @@
         </div>
     </div>
     
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-end gap-2">
-                <a href="<?= BASE_URL ?>/orders" class="btn btn-secondary">
-                    <i class="bi bi-x-circle"></i> Cancelar
-                </a>
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check-circle"></i> Crear Pedido
-                </button>
-            </div>
+    <div class="row mt-4 mb-5">
+        <div class="col-12 text-center">
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-check-circle"></i> Realizar Pedido
+            </button>
         </div>
     </div>
 </form>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('orderForm');
+    const form = document.getElementById('publicOrderForm');
     const totalElement = document.getElementById('orderTotal');
+    const pickupCheckbox = document.getElementById('is_pickup');
+    const pickupContainer = document.getElementById('pickup_datetime_container');
+    const pickupDatetime = document.getElementById('pickup_datetime');
+    
+    // Handle pickup checkbox
+    pickupCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            pickupContainer.style.display = 'block';
+            pickupDatetime.required = true;
+            // Set minimum datetime to now + 30 minutes
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 30);
+            pickupDatetime.min = now.toISOString().slice(0, 16);
+        } else {
+            pickupContainer.style.display = 'none';
+            pickupDatetime.required = false;
+        }
+    });
+    
+    // Trigger on load if already checked
+    if (pickupCheckbox.checked) {
+        pickupCheckbox.dispatchEvent(new Event('change'));
+    }
     
     // Handle quantity buttons
     document.addEventListener('click', function(e) {
@@ -202,10 +255,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show/hide notes input
             if (currentQuantity > 0) {
                 notesInput.style.display = 'block';
-                dishCard.classList.add('border-primary');
+                dishCard.classList.add('border-success');
             } else {
                 notesInput.style.display = 'none';
-                dishCard.classList.remove('border-primary');
+                dishCard.classList.remove('border-success');
                 notesInput.value = '';
             }
             
@@ -223,10 +276,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (quantity > 0) {
                 notesInput.style.display = 'block';
-                dishCard.classList.add('border-primary');
+                dishCard.classList.add('border-success');
             } else {
                 notesInput.style.display = 'none';
-                dishCard.classList.remove('border-primary');
+                dishCard.classList.remove('border-success');
                 notesInput.value = '';
             }
             
@@ -257,12 +310,16 @@ document.addEventListener('DOMContentLoaded', function() {
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
-.dish-card.border-primary {
-    border-color: #0d6efd !important;
-    background-color: #f8f9ff;
+.dish-card.border-success {
+    border-color: #198754 !important;
+    background-color: #f8fff8;
 }
 
 .btn-minus, .btn-plus {
     width: 35px;
+}
+
+.sticky-top {
+    z-index: 1020;
 }
 </style>

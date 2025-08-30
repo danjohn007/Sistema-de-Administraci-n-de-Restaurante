@@ -8,7 +8,9 @@ class DishesController extends BaseController {
     }
     
     public function index() {
-        $this->requireRole(ROLE_ADMIN);
+        $this->requireRole([ROLE_ADMIN, ROLE_WAITER]);
+        
+        $user = $this->getCurrentUser();
         
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $categoryFilter = isset($_GET['category']) ? $_GET['category'] : '';
@@ -76,7 +78,8 @@ class DishesController extends BaseController {
             'pagination' => $result['pagination'],
             'categories' => $categories,
             'categoryFilter' => $categoryFilter,
-            'search' => $search
+            'search' => $search,
+            'user' => $user
         ]);
     }
     
