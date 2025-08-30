@@ -164,15 +164,29 @@ class Reservation extends BaseModel {
             $tableIds = [$tableIds];
         }
         
-        // Remove existing table assignments for this reservation
+        // Remove existing table assignments for this reservation and unblock those tables
+        $currentTables = $this->getReservationTables($reservationId);
+        foreach ($currentTables as $table) {
+            // Only unblock if it's not occupied by an order
+            $tableModel = new Table();
+            $currentOrder = $tableModel->getCurrentOrder($table['id']);
+            if (!$currentOrder) {
+                $tableModel->updateTableStatus($table['id'], TABLE_AVAILABLE);
+            }
+        }
+        
         $stmt = $this->db->prepare("DELETE FROM reservation_tables WHERE reservation_id = ?");
         $stmt->execute([$reservationId]);
         
-        // Add new table assignments
+        // Add new table assignments and block the tables
+        $tableModel = new Table();
         foreach ($tableIds as $tableId) {
             if (!empty($tableId)) {
                 $stmt = $this->db->prepare("INSERT INTO reservation_tables (reservation_id, table_id) VALUES (?, ?)");
                 $stmt->execute([$reservationId, $tableId]);
+                
+                // Block the table - set to occupied status for reservation
+                $tableModel->updateTableStatus($tableId, TABLE_OCCUPIED);
             }
         }
     }

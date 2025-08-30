@@ -50,9 +50,9 @@ class Ticket extends BaseModel {
             // Update order status
             $orderModel->updateOrderStatus($orderId, ORDER_DELIVERED);
             
-            // Update table status
+            // Free the table (set to available) since the ticket has been generated
             $tableModel = new Table();
-            $tableModel->updateTableStatus($order['table_id'], TABLE_CLOSED);
+            $tableModel->updateTableStatus($order['table_id'], TABLE_AVAILABLE);
             
             $this->db->commit();
             return $ticketId;
@@ -131,9 +131,9 @@ class Ticket extends BaseModel {
                 $orderModel->updateOrderStatus($order['id'], ORDER_DELIVERED);
             }
             
-            // Update table status
+            // Free the table (set to available) since the ticket has been generated
             $tableModel = new Table();
-            $tableModel->updateTableStatus($tableId, TABLE_CLOSED);
+            $tableModel->updateTableStatus($tableId, TABLE_AVAILABLE);
             
             $this->db->commit();
             return $ticketId;
