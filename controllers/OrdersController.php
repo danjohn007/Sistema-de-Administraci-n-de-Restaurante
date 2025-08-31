@@ -435,6 +435,30 @@ class OrdersController extends BaseController {
                         }
                     }
                 }
+                
+                // Ensure order total is updated after adding new items
+                $this->orderModel->updateOrderTotal($id);
+            }
+            
+            // Update table status if table was changed
+            if (isset($_POST['table_id']) && !empty($_POST['table_id'])) {
+                $order = $this->orderModel->find($id);
+                // If the table changed, update the table status
+                if ($order['table_id'] != $_POST['table_id']) {
+                    // Set new table as occupied
+                    $this->tableModel->updateTableStatus($_POST['table_id'], TABLE_OCCUPIED);
+                    
+                    // If old table exists and no other active orders, free it
+                    if ($order['table_id']) {
+                        $activeOrders = $this->orderModel->findAll([
+                            'table_id' => $order['table_id'],
+                            'status' => [ORDER_PENDING, ORDER_PREPARING, ORDER_READY]
+                        ]);
+                        if (count($activeOrders) <= 1) { // Only current order
+                            $this->tableModel->updateTableStatus($order['table_id'], TABLE_AVAILABLE);
+                        }
+                    }
+                }
             }
             
             $this->redirect('orders/show/' . $id, 'success', 'Pedido actualizado correctamente');

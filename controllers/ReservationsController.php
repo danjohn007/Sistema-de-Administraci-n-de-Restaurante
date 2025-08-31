@@ -323,5 +323,48 @@ class ReservationsController extends BaseController {
         
         return $errors;
     }
+    
+    public function getAvailableTablesByDate() {
+        // This method handles AJAX requests to get available tables for a specific date
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            return;
+        }
+        
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (!isset($data['datetime'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Datetime parameter required']);
+            return;
+        }
+        
+        $datetime = $data['datetime'];
+        $excludeReservationId = $data['exclude_reservation_id'] ?? null;
+        
+        try {
+            // Get all active tables
+            $allTables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+            
+            // Filter available tables based on the datetime
+            $availableTables = [];
+            foreach ($allTables as $table) {
+                if ($this->reservationModel->checkTableAvailability([$table['id']], $datetime, $excludeReservationId)) {
+                    $availableTables[] = $table;
+                }
+            }
+            
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'tables' => $availableTables
+            ]);
+            
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error fetching available tables: ' . $e->getMessage()]);
+        }
+    }
 }
 ?>

@@ -331,6 +331,80 @@ document.addEventListener('DOMContentLoaded', function() {
     if (partySizeSelect.value) {
         partySizeSelect.dispatchEvent(new Event('change'));
     }
+    
+    // Add date change handler for real-time table availability filtering
+    reservationDatetime.addEventListener('change', function() {
+        const selectedDate = this.value;
+        
+        if (selectedDate) {
+            // Show loading state
+            const tablesContainer = document.getElementById('tables-selection');
+            if (tablesContainer) {
+                const originalContent = tablesContainer.innerHTML;
+                tablesContainer.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando...</span></div> Actualizando disponibilidad...</div>';
+                
+                // Make AJAX request to get available tables for the selected date
+                fetch('<?= BASE_URL ?>/reservations/getAvailableTablesByDate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        datetime: selectedDate,
+                        exclude_reservation_id: <?= $reservation['id'] ?>
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateTablesDisplayEdit(data.tables);
+                    } else {
+                        // Restore original content on error
+                        tablesContainer.innerHTML = originalContent;
+                        alert('Error al cargar las mesas disponibles: ' + (data.error || 'Error desconocido'));
+                    }
+                })
+                .catch(error => {
+                    // Restore original content on error
+                    tablesContainer.innerHTML = originalContent;
+                    console.error('Error:', error);
+                    alert('Error de conexión al cargar las mesas disponibles');
+                });
+            }
+        }
+    });
+    
+    function updateTablesDisplayEdit(availableTables) {
+        const tablesContainer = document.getElementById('tables-selection');
+        const currentSelections = <?php echo json_encode(array_column($reservationTables ?? [], 'id')); ?>;
+        let html = '';
+        
+        if (availableTables.length === 0) {
+            html = '<div class="col-12"><div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> No hay mesas disponibles para la fecha y hora seleccionada. Por favor, elija otra fecha.</div></div>';
+        } else {
+            availableTables.forEach(function(table) {
+                const isSelected = currentSelections.includes(table.id);
+                html += `
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input table-checkbox" 
+                                   type="checkbox" 
+                                   value="${table.id}" 
+                                   name="table_ids[]" 
+                                   id="table_${table.id}"
+                                   ${isSelected ? 'checked' : ''}>
+                            <label class="form-check-label" for="table_${table.id}">
+                                <strong>Mesa ${table.number}</strong><br>
+                                <small class="text-muted">Capacidad: ${table.capacity} personas</small>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        tablesContainer.innerHTML = html;
+    }
     <?php endif; ?>
 });
 </script>

@@ -276,6 +276,86 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox.addEventListener('change', updateCapacityCounter);
     });
     
+    // Add date change handler for real-time table availability filtering
+    reservationDatetime.addEventListener('change', function() {
+        const selectedDate = this.value;
+        
+        if (selectedDate) {
+            // Show loading state
+            const tablesContainer = document.getElementById('tables-selection');
+            const originalContent = tablesContainer.innerHTML;
+            tablesContainer.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando...</span></div> Actualizando disponibilidad...</div>';
+            
+            // Make AJAX request to get available tables for the selected date
+            fetch('<?= BASE_URL ?>/reservations/getAvailableTablesByDate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    datetime: selectedDate<?php if (isset($reservation['id'])): ?>,
+                    exclude_reservation_id: <?= $reservation['id'] ?><?php endif; ?>
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateTablesDisplay(data.tables);
+                } else {
+                    // Restore original content on error
+                    tablesContainer.innerHTML = originalContent;
+                    alert('Error al cargar las mesas disponibles: ' + (data.error || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                // Restore original content on error
+                tablesContainer.innerHTML = originalContent;
+                console.error('Error:', error);
+                alert('Error de conexión al cargar las mesas disponibles');
+            });
+        }
+    });
+    
+    function updateTablesDisplay(availableTables) {
+        const tablesContainer = document.getElementById('tables-selection');
+        let html = '';
+        
+        if (availableTables.length === 0) {
+            html = '<div class="col-12"><div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> No hay mesas disponibles para la fecha y hora seleccionada. Por favor, elija otra fecha.</div></div>';
+        } else {
+            availableTables.forEach(function(table) {
+                const isSelected = <?php echo json_encode(array_column($reservationTables ?? [], 'id')); ?>.includes(table.id);
+                html += `
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input table-checkbox" 
+                                   type="checkbox" 
+                                   value="${table.id}" 
+                                   name="table_ids[]" 
+                                   id="table_${table.id}"
+                                   ${isSelected ? 'checked' : ''}>
+                            <label class="form-check-label" for="table_${table.id}">
+                                <strong>Mesa ${table.number}</strong><br>
+                                <small class="text-muted">Capacidad: ${table.capacity} personas</small>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        tablesContainer.innerHTML = html;
+        
+        // Re-attach event listeners to new checkboxes
+        const newTableCheckboxes = document.querySelectorAll('.table-checkbox');
+        newTableCheckboxes.forEach(function(checkbox) {
+            checkbox.addEventListener('change', updateCapacityCounter);
+        });
+        
+        // Update capacity counter with new selection
+        updateCapacityCounter();
+    }
+    
     function updateCapacityCounter() {
         const partySize = parseInt(partySizeSelect.value) || 0;
         let totalCapacity = 0;
