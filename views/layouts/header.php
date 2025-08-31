@@ -103,6 +103,26 @@
                             <?php endif; ?>
                         </ul>
                     </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-star-fill"></i> Clientes
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/best_diners">
+                                <i class="bi bi-trophy"></i> Mejores Comensales
+                            </a></li>
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/best_diners/bySpending">
+                                <i class="bi bi-currency-dollar"></i> Top por Consumo
+                            </a></li>
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/best_diners/byVisits">
+                                <i class="bi bi-people-fill"></i> Top por Visitas
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/best_diners/report">
+                                <i class="bi bi-bar-chart"></i> Reporte Completo
+                            </a></li>
+                        </ul>
+                    </li>
                     <?php endif; ?>
                 </ul>
                 

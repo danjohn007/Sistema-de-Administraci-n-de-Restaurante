@@ -71,6 +71,55 @@
                     </div>
                     <?php endif; ?>
                     
+                    <!-- Customer Search Section -->
+                    <div class="mb-3">
+                        <label class="form-label">Cliente (Opcional)</label>
+                        <div class="input-group mb-2">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="customer_search" 
+                                   placeholder="Buscar por nombre o teléfono..."
+                                   autocomplete="off">
+                            <button type="button" 
+                                    class="btn btn-outline-secondary" 
+                                    id="clear_customer">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Customer Results -->
+                        <div id="customer_results" class="list-group mb-2" style="display: none;"></div>
+                        
+                        <!-- Selected Customer Display -->
+                        <div id="selected_customer" class="alert alert-info" style="display: none;">
+                            <strong>Cliente seleccionado:</strong> 
+                            <span id="customer_display"></span>
+                            <input type="hidden" id="customer_id" name="customer_id" value="">
+                        </div>
+                        
+                        <!-- New Customer Form -->
+                        <div class="row" id="new_customer_form" style="display: none;">
+                            <div class="col-md-6">
+                                <input type="text" 
+                                       class="form-control form-control-sm" 
+                                       id="new_customer_name" 
+                                       name="new_customer_name" 
+                                       placeholder="Nombre completo">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="tel" 
+                                       class="form-control form-control-sm" 
+                                       id="new_customer_phone" 
+                                       name="new_customer_phone" 
+                                       placeholder="Teléfono">
+                            </div>
+                        </div>
+                        
+                        <div class="form-text">
+                            Busque un cliente existente o deje vacío para pedido sin cliente asignado
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label for="notes" class="form-label">Notas del Pedido</label>
                         <textarea class="form-control" 
@@ -180,6 +229,125 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('orderForm');
     const totalElement = document.getElementById('orderTotal');
+    
+    // Customer search functionality
+    const customerSearch = document.getElementById('customer_search');
+    const customerResults = document.getElementById('customer_results');
+    const selectedCustomer = document.getElementById('selected_customer');
+    const customerDisplay = document.getElementById('customer_display');
+    const customerIdInput = document.getElementById('customer_id');
+    const clearCustomerBtn = document.getElementById('clear_customer');
+    const newCustomerForm = document.getElementById('new_customer_form');
+    
+    let searchTimeout;
+    
+    // Customer search input handler
+    customerSearch.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            customerResults.style.display = 'none';
+            return;
+        }
+        
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            searchCustomers(query);
+        }, 300);
+    });
+    
+    // Clear customer selection
+    clearCustomerBtn.addEventListener('click', function() {
+        clearCustomerSelection();
+    });
+    
+    // Search customers via AJAX
+    function searchCustomers(query) {
+        fetch('<?= BASE_URL ?>/orders/searchCustomers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query: query })
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayCustomerResults(data.customers || []);
+        })
+        .catch(error => {
+            console.error('Error searching customers:', error);
+            customerResults.innerHTML = '<div class="list-group-item text-danger">Error al buscar clientes</div>';
+            customerResults.style.display = 'block';
+        });
+    }
+    
+    // Display customer search results
+    function displayCustomerResults(customers) {
+        customerResults.innerHTML = '';
+        
+        if (customers.length === 0) {
+            customerResults.innerHTML = `
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>No se encontraron clientes</span>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="showNewCustomerForm()">
+                            <i class="bi bi-plus"></i> Crear Nuevo
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            customers.forEach(customer => {
+                const item = document.createElement('div');
+                item.className = 'list-group-item list-group-item-action';
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${customer.name}</strong><br>
+                            <small class="text-muted">${customer.phone} | Visitas: ${customer.total_visits} | Gastado: $${parseFloat(customer.total_spent).toFixed(2)}</small>
+                        </div>
+                    </div>
+                `;
+                item.addEventListener('click', () => selectCustomer(customer));
+                customerResults.appendChild(item);
+            });
+        }
+        
+        customerResults.style.display = 'block';
+    }
+    
+    // Select a customer
+    function selectCustomer(customer) {
+        customerIdInput.value = customer.id;
+        customerDisplay.textContent = `${customer.name} (${customer.phone})`;
+        selectedCustomer.style.display = 'block';
+        customerResults.style.display = 'none';
+        newCustomerForm.style.display = 'none';
+        customerSearch.value = customer.name;
+    }
+    
+    // Clear customer selection
+    function clearCustomerSelection() {
+        customerIdInput.value = '';
+        selectedCustomer.style.display = 'none';
+        customerResults.style.display = 'none';
+        newCustomerForm.style.display = 'none';
+        customerSearch.value = '';
+    }
+    
+    // Show new customer form
+    window.showNewCustomerForm = function() {
+        newCustomerForm.style.display = 'block';
+        customerResults.style.display = 'none';
+        document.getElementById('new_customer_name').value = customerSearch.value;
+    }
+    
+    // Hide customer results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#customer_search') && !e.target.closest('#customer_results')) {
+            customerResults.style.display = 'none';
+        }
+    });
     
     // Handle quantity buttons
     document.addEventListener('click', function(e) {

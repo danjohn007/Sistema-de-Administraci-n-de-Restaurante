@@ -4,6 +4,7 @@ class OrdersController extends BaseController {
     private $tableModel;
     private $dishModel;
     private $waiterModel;
+    private $customerModel;
     
     public function __construct() {
         parent::__construct();
@@ -12,6 +13,7 @@ class OrdersController extends BaseController {
         $this->tableModel = new Table();
         $this->dishModel = new Dish();
         $this->waiterModel = new Waiter();
+        $this->customerModel = new Customer();
     }
     
     public function index() {
@@ -326,6 +328,29 @@ class OrdersController extends BaseController {
             'notes' => $_POST['notes'] ?? null
         ];
         
+        // Handle customer assignment
+        $customerId = null;
+        if (!empty($_POST['customer_id'])) {
+            // Existing customer selected
+            $customerId = $_POST['customer_id'];
+        } elseif (!empty($_POST['new_customer_name']) && !empty($_POST['new_customer_phone'])) {
+            // Create new customer
+            try {
+                $customerData = [
+                    'name' => $_POST['new_customer_name'],
+                    'phone' => $_POST['new_customer_phone']
+                ];
+                $customerId = $this->customerModel->findOrCreateByPhone($customerData);
+            } catch (Exception $e) {
+                // If customer creation fails, continue without customer
+                error_log("Failed to create customer: " . $e->getMessage());
+            }
+        }
+        
+        if ($customerId) {
+            $orderData['customer_id'] = $customerId;
+        }
+        
         $items = [];
         if (isset($_POST['items']) && is_array($_POST['items'])) {
             foreach ($_POST['items'] as $item) {
@@ -545,6 +570,31 @@ class OrdersController extends BaseController {
             $this->redirect('orders/edit/' . $orderId, 'success', 'Item eliminado correctamente');
         } catch (Exception $e) {
             $this->redirect('orders/edit/' . $orderId, 'error', 'Error al eliminar el item: ' . $e->getMessage());
+        }
+    }
+    
+    public function searchCustomers() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            return;
+        }
+        
+        $data = json_decode(file_get_contents('php://input'), true);
+        $query = $data['query'] ?? '';
+        
+        if (empty($query) || strlen($query) < 2) {
+            echo json_encode(['customers' => []]);
+            return;
+        }
+        
+        try {
+            $customers = $this->customerModel->searchCustomers($query);
+            header('Content-Type: application/json');
+            echo json_encode(['customers' => $customers]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error searching customers: ' . $e->getMessage()]);
         }
     }
 }
