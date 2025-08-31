@@ -74,4 +74,35 @@ class Customer extends BaseModel {
         
         return $stmt->fetch();
     }
+    
+    public function searchCustomers($query) {
+        $searchTerm = "%{$query}%";
+        
+        $sql = "SELECT * FROM customers 
+                WHERE active = 1 
+                AND (name LIKE ? OR phone LIKE ?) 
+                ORDER BY total_visits DESC, name ASC 
+                LIMIT 10";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$searchTerm, $searchTerm]);
+        
+        return $stmt->fetchAll();
+    }
+    
+    public function findOrCreateByPhone($customerData) {
+        // Try to find existing customer by phone
+        $existing = $this->findBy('phone', $customerData['phone']);
+        
+        if ($existing) {
+            // Update name if provided and different
+            if (isset($customerData['name']) && $customerData['name'] !== $existing['name']) {
+                $this->update($existing['id'], ['name' => $customerData['name']]);
+            }
+            return $existing['id'];
+        }
+        
+        // Create new customer
+        return $this->create($customerData);
+    }
 }
