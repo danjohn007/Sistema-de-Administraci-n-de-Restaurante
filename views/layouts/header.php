@@ -156,7 +156,12 @@
         <?php 
         $flashTypes = ['success', 'error', 'warning', 'info'];
         foreach ($flashTypes as $type): 
-            $message = $this->getFlashMessage($type);
+            $key = 'flash_' . $type;
+            $message = null;
+            if (isset($_SESSION[$key])) {
+                $message = $_SESSION[$key];
+                unset($_SESSION[$key]); // Remove message after displaying it
+            }
             if ($message):
                 $alertClass = $type === 'error' ? 'danger' : $type;
         ?>

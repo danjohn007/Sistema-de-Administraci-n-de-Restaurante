@@ -29,7 +29,18 @@ abstract class BaseController {
             $allowedRoles = [$allowedRoles];
         }
         
-        if (!in_array($_SESSION['user_role'], $allowedRoles)) {
+        // Get user role and normalize it (trim whitespace and convert to lowercase)
+        $userRole = isset($_SESSION['user_role']) ? trim($_SESSION['user_role']) : '';
+        
+        // Normalize allowed roles for comparison
+        $normalizedAllowedRoles = array_map(function($role) {
+            return strtolower(trim($role));
+        }, $allowedRoles);
+        
+        // Check if user role matches any allowed role (case-insensitive)
+        if (!in_array(strtolower($userRole), $normalizedAllowedRoles)) {
+            // Log the issue for debugging
+            error_log("Role validation failed: User role '$userRole' not in allowed roles: " . implode(', ', $allowedRoles));
             $this->redirect('dashboard', 'error', 'No tienes permisos para acceder a esta sección');
         }
     }
