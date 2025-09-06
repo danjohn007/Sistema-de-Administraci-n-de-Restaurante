@@ -199,7 +199,7 @@ class TicketsController extends BaseController {
         ]);
         
         // Validate payment method
-        $validMethods = ['efectivo', 'tarjeta', 'transferencia'];
+        $validMethods = ['efectivo', 'tarjeta', 'transferencia', 'intercambio', 'pendiente_por_cobrar'];
         if (!in_array($data['payment_method'] ?? '', $validMethods)) {
             $errors['payment_method'] = 'Método de pago inválido';
         }
@@ -249,6 +249,110 @@ class TicketsController extends BaseController {
     
     private function getSalesReportData($startDate, $endDate) {
         return $this->ticketModel->getSalesReportData($startDate, $endDate);
+    }
+    
+    public function pendingPayments() {
+        $this->requireRole([ROLE_ADMIN, ROLE_CASHIER]);
+        
+        // Get all tickets with payment method 'pendiente_por_cobrar'
+        $pendingTickets = $this->ticketModel->getPendingPayments();
+        
+        $this->view('tickets/pending_payments', [
+            'tickets' => $pendingTickets,
+            'user' => $this->getCurrentUser()
+        ]);
+    }
+    
+    public function markAsPaid($ticketId) {
+        $this->requireRole([ROLE_ADMIN, ROLE_CASHIER]);
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $paymentMethod = $_POST['payment_method'] ?? 'efectivo';
+            
+            if ($this->ticketModel->updatePaymentMethod($ticketId, $paymentMethod)) {
+                $this->redirect('tickets/pendingPayments', 'success', 'Pago marcado como cobrado');
+            } else {
+                $this->redirect('tickets/pendingPayments', 'error', 'Error al actualizar el pago');
+            }
+        }
+    }
+    
+    public function createExpiredTicket() {
+        $this->requireRole([ROLE_ADMIN, ROLE_CASHIER]);
+        
+        $user = $this->getCurrentUser();
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Get expired orders that are ready for ticket generation
+            $expiredOrders = $this->orderModel->getExpiredOrdersReadyForTicket();
+            
+            $this->view('tickets/create_expired', [
+                'orders' => $expiredOrders,
+                'user' => $user
+            ]);
+        } else {
+            // Handle form submission
+            $errors = $this->validateExpiredTicketInput($_POST);
+            
+            if (!empty($errors)) {
+                $expiredOrders = $this->orderModel->getExpiredOrdersReadyForTicket();
+                $this->view('tickets/create_expired', [
+                    'errors' => $errors,
+                    'old' => $_POST,
+                    'orders' => $expiredOrders,
+                    'user' => $user
+                ]);
+                return;
+            }
+            
+            try {
+                $orderId = $_POST['order_id'];
+                $paymentMethod = $_POST['payment_method'] ?? 'efectivo';
+                
+                $ticketId = $this->ticketModel->createExpiredOrderTicket($orderId, $user['id'], $paymentMethod);
+                
+                $this->redirect('tickets/show/' . $ticketId, 'success', 'Ticket de pedido vencido generado correctamente');
+            } catch (Exception $e) {
+                $expiredOrders = $this->orderModel->getExpiredOrdersReadyForTicket();
+                $this->view('tickets/create_expired', [
+                    'error' => 'Error al generar el ticket: ' . $e->getMessage(),
+                    'old' => $_POST,
+                    'orders' => $expiredOrders,
+                    'user' => $user
+                ]);
+            }
+        }
+    }
+    
+    private function validateExpiredTicketInput($data) {
+        $errors = $this->validateInput($data, [
+            'order_id' => ['required' => true],
+            'payment_method' => ['required' => true]
+        ]);
+        
+        // Validate payment method
+        $validMethods = ['efectivo', 'tarjeta', 'transferencia', 'intercambio', 'pendiente_por_cobrar'];
+        if (!in_array($data['payment_method'] ?? '', $validMethods)) {
+            $errors['payment_method'] = 'Método de pago inválido';
+        }
+        
+        // Validate order exists and is ready
+        if (!empty($data['order_id'])) {
+            $order = $this->orderModel->find($data['order_id']);
+            if (!$order) {
+                $errors['order_id'] = 'El pedido seleccionado no existe';
+            } elseif ($order['status'] !== ORDER_READY) {
+                $errors['order_id'] = 'El pedido debe estar en estado "Listo" para generar el ticket';
+            } else {
+                // Check if order already has a ticket
+                $existingTicket = $this->ticketModel->findBy('order_id', $data['order_id']);
+                if ($existingTicket) {
+                    $errors['order_id'] = 'Este pedido ya tiene un ticket generado';
+                }
+            }
+        }
+        
+        return $errors;
     }
 }
 ?>

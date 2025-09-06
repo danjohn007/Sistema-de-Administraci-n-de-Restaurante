@@ -161,6 +161,66 @@
     </div>
 </div>
 
+<!-- New Payment Method Statistics -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted mb-1">Total Intercambios</h6>
+                        <h3 class="mb-0 text-warning">
+                            $<?= number_format($intercambio_stats['total_amount'] ?? 0, 2) ?>
+                        </h3>
+                        <small class="text-muted"><?= $intercambio_stats['count'] ?? 0 ?> transacciones</small>
+                    </div>
+                    <div class="text-warning">
+                        <i class="bi bi-arrow-left-right" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card stat-card danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted mb-1">Pendiente por Cobrar</h6>
+                        <h3 class="mb-0 text-danger">
+                            $<?= number_format($pending_payment_stats['total_amount'] ?? 0, 2) ?>
+                        </h3>
+                        <small class="text-muted"><?= $pending_payment_stats['count'] ?? 0 ?> cuentas pendientes</small>
+                    </div>
+                    <div class="text-danger">
+                        <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card stat-card info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted mb-1">Métodos de Pago</h6>
+                        <h3 class="mb-0 text-info">
+                            <?= count($payment_method_stats ?? []) ?>
+                        </h3>
+                        <small class="text-muted">métodos utilizados</small>
+                    </div>
+                    <div class="text-info">
+                        <i class="bi bi-credit-card" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Income vs Expenses Chart -->
 <div class="row mb-4">
     <div class="col-md-8">
@@ -389,6 +449,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const incomeData = incomeVsExpensesData.map(item => parseFloat(item.income));
         const expenseData = incomeVsExpensesData.map(item => parseFloat(item.expenses));
+        const withdrawalData = incomeVsExpensesData.map(item => parseFloat(item.withdrawals || 0));
+        const totalExpenseData = incomeVsExpensesData.map(item => parseFloat(item.total_expenses));
         const netProfitData = incomeVsExpensesData.map(item => parseFloat(item.net_profit));
         
         new Chart(ctx, {
@@ -409,6 +471,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: expenseData,
                         borderColor: 'rgb(220, 53, 69)',
                         backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Retiros',
+                        data: withdrawalData,
+                        borderColor: 'rgb(255, 193, 7)',
+                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
                         tension: 0.4,
                         fill: false
                     },
