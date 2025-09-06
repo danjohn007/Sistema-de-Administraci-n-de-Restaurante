@@ -142,6 +142,116 @@
                         </div>
                     </div>
 
+                    <!-- Validity Period Section -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-calendar-range"></i> Período de Validez
+                                <small class="text-muted">(Opcional)</small>
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="1" id="has_validity" name="has_validity" 
+                                           <?= ($old['has_validity'] ?? '0') == '1' ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="has_validity">
+                                        <strong>Configurar disponibilidad específica</strong>
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    Por defecto, los platillos están siempre disponibles. Activa esta opción para configurar períodos específicos.
+                                </div>
+                            </div>
+
+                            <div id="validity-settings" style="display: <?= ($old['has_validity'] ?? '0') == '1' ? 'block' : 'none' ?>;">
+                                <!-- Date Range -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="validity_start" class="form-label">
+                                            <i class="bi bi-calendar-check"></i> Fecha de Inicio
+                                        </label>
+                                        <input 
+                                            type="date" 
+                                            class="form-control <?= isset($errors['validity_start']) ? 'is-invalid' : '' ?>" 
+                                            id="validity_start" 
+                                            name="validity_start" 
+                                            value="<?= htmlspecialchars($old['validity_start'] ?? '') ?>"
+                                        >
+                                        <?php if (isset($errors['validity_start'])): ?>
+                                        <div class="invalid-feedback">
+                                            <?= htmlspecialchars($errors['validity_start']) ?>
+                                        </div>
+                                        <?php endif; ?>
+                                        <div class="form-text">Opcional: Fecha desde la cual el platillo estará disponible</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="validity_end" class="form-label">
+                                            <i class="bi bi-calendar-x"></i> Fecha de Finalización
+                                        </label>
+                                        <input 
+                                            type="date" 
+                                            class="form-control <?= isset($errors['validity_end']) ? 'is-invalid' : '' ?>" 
+                                            id="validity_end" 
+                                            name="validity_end" 
+                                            value="<?= htmlspecialchars($old['validity_end'] ?? '') ?>"
+                                        >
+                                        <?php if (isset($errors['validity_end'])): ?>
+                                        <div class="invalid-feedback">
+                                            <?= htmlspecialchars($errors['validity_end']) ?>
+                                        </div>
+                                        <?php endif; ?>
+                                        <div class="form-text">Opcional: Fecha hasta la cual el platillo estará disponible</div>
+                                    </div>
+                                </div>
+
+                                <!-- Day of Week Selection -->
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-calendar-week"></i> Días de la Semana Disponible
+                                    </label>
+                                    <div class="row">
+                                        <?php 
+                                        $days = [
+                                            '1' => 'Lunes',
+                                            '2' => 'Martes', 
+                                            '3' => 'Miércoles',
+                                            '4' => 'Jueves',
+                                            '5' => 'Viernes',
+                                            '6' => 'Sábado',
+                                            '0' => 'Domingo'
+                                        ];
+                                        $selectedDays = $old['availability_days'] ?? '';
+                                        ?>
+                                        <?php foreach ($days as $dayNum => $dayName): ?>
+                                        <div class="col-md-3 col-6 mb-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="<?= $dayNum ?>" 
+                                                       id="day_<?= $dayNum ?>" name="availability_days[]"
+                                                       <?= strpos($selectedDays, $dayNum) !== false ? 'checked' : '' ?>>
+                                                <label class="form-check-label" for="day_<?= $dayNum ?>">
+                                                    <?= $dayName ?>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <div class="form-text">Si no seleccionas ningún día, el platillo estará disponible todos los días dentro del rango de fechas.</div>
+                                </div>
+
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <strong>Importante:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        <li>Si no configuras fechas, la disponibilidad por días se aplicará indefinidamente</li>
+                                        <li>Si configuras fechas pero no días, el platillo estará disponible todos los días en ese rango</li>
+                                        <li>La validación de disponibilidad se realiza automáticamente al crear pedidos</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
                         <strong>Información:</strong>
@@ -222,5 +332,11 @@ document.getElementById('description').addEventListener('input', function() {
         helpText.textContent = 'Descripción opcional del platillo (máximo 1000 caracteres)';
         helpText.className = 'form-text';
     }
+});
+
+// Validity period handling
+document.getElementById('has_validity').addEventListener('change', function() {
+    var validitySettings = document.getElementById('validity-settings');
+    validitySettings.style.display = this.checked ? 'block' : 'none';
 });
 </script>
