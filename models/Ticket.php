@@ -427,21 +427,43 @@ class Ticket extends BaseModel {
         $stmt->execute([$dateFrom, $dateTo]);
         $expenseData = $stmt->fetchAll();
         
-        // Combine income and expense data by date
+        // Get withdrawals by date
+        $withdrawalModel = new CashWithdrawal();
+        $withdrawalQuery = "SELECT 
+                               DATE(withdrawal_date) as date,
+                               SUM(amount) as total_withdrawals
+                            FROM cash_withdrawals 
+                            WHERE DATE(withdrawal_date) BETWEEN ? AND ?
+                            GROUP BY DATE(withdrawal_date)
+                            ORDER BY DATE(withdrawal_date) ASC";
+        
+        $stmt = $this->db->prepare($withdrawalQuery);
+        $stmt->execute([$dateFrom, $dateTo]);
+        $withdrawalData = $stmt->fetchAll();
+        
+        // Combine income, expense and withdrawal data by date
         $combinedData = [];
         $expenseByDate = [];
+        $withdrawalByDate = [];
         
         foreach ($expenseData as $expense) {
             $expenseByDate[$expense['date']] = (float)$expense['total_expenses'];
         }
         
+        foreach ($withdrawalData as $withdrawal) {
+            $withdrawalByDate[$withdrawal['date']] = (float)$withdrawal['total_withdrawals'];
+        }
+        
         foreach ($incomeData as $income) {
             $date = $income['date'];
+            $totalExpenses = ($expenseByDate[$date] ?? 0) + ($withdrawalByDate[$date] ?? 0);
             $combinedData[] = [
                 'date' => $date,
                 'income' => (float)$income['total_income'],
                 'expenses' => $expenseByDate[$date] ?? 0,
-                'net_profit' => (float)$income['total_income'] - ($expenseByDate[$date] ?? 0)
+                'withdrawals' => $withdrawalByDate[$date] ?? 0,
+                'total_expenses' => $totalExpenses,
+                'net_profit' => (float)$income['total_income'] - $totalExpenses
             ];
         }
         
@@ -558,6 +580,56 @@ class Ticket extends BaseModel {
             error_log("Expired order ticket creation failed: " . $e->getMessage());
             throw $e;
         }
+    }
+    
+    public function getPaymentMethodStats($dateFrom = null, $dateTo = null) {
+        $dateFrom = $dateFrom ?: date('Y-m-01');
+        $dateTo = $dateTo ?: date('Y-m-d');
+        
+        $query = "SELECT 
+                     payment_method,
+                     COUNT(*) as ticket_count,
+                     SUM(total) as total_amount
+                  FROM tickets 
+                  WHERE DATE(created_at) BETWEEN ? AND ?
+                  GROUP BY payment_method
+                  ORDER BY total_amount DESC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$dateFrom, $dateTo]);
+        return $stmt->fetchAll();
+    }
+    
+    public function getIntercambioTotal($dateFrom = null, $dateTo = null) {
+        $dateFrom = $dateFrom ?: date('Y-m-01');
+        $dateTo = $dateTo ?: date('Y-m-d');
+        
+        $query = "SELECT 
+                     COUNT(*) as count,
+                     COALESCE(SUM(total), 0) as total_amount
+                  FROM tickets 
+                  WHERE payment_method = 'intercambio'
+                  AND DATE(created_at) BETWEEN ? AND ?";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$dateFrom, $dateTo]);
+        return $stmt->fetch();
+    }
+    
+    public function getPendingPaymentTotal($dateFrom = null, $dateTo = null) {
+        $dateFrom = $dateFrom ?: date('Y-m-01');
+        $dateTo = $dateTo ?: date('Y-m-d');
+        
+        $query = "SELECT 
+                     COUNT(*) as count,
+                     COALESCE(SUM(total), 0) as total_amount
+                  FROM tickets 
+                  WHERE payment_method = 'pendiente_por_cobrar'
+                  AND DATE(created_at) BETWEEN ? AND ?";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$dateFrom, $dateTo]);
+        return $stmt->fetch();
     }
 }
 ?>

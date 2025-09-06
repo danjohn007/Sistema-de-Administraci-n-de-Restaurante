@@ -39,6 +39,11 @@ class FinancialController extends BaseController {
         $incomeByPaymentMethod = $this->ticketModel->getIncomeByPaymentMethod($dateFrom, $dateTo);
         $incomeVsExpenses = $this->ticketModel->getIncomeVsExpensesData($dateFrom, $dateTo);
         
+        // New payment method statistics
+        $paymentMethodStats = $this->ticketModel->getPaymentMethodStats($dateFrom, $dateTo);
+        $intercambioStats = $this->ticketModel->getIntercambioTotal($dateFrom, $dateTo);
+        $pendingPaymentStats = $this->ticketModel->getPendingPaymentTotal($dateFrom, $dateTo);
+        
         // Calculate total expenses for comparison
         $totalExpenseAmount = 0;
         foreach ($totalExpenses as $expense) {
@@ -64,6 +69,9 @@ class FinancialController extends BaseController {
             'total_income' => $totalIncome,
             'income_by_payment_method' => $incomeByPaymentMethod,
             'income_vs_expenses' => $incomeVsExpenses,
+            'payment_method_stats' => $paymentMethodStats,
+            'intercambio_stats' => $intercambioStats,
+            'pending_payment_stats' => $pendingPaymentStats,
             'total_expense_amount' => $totalExpenseAmount,
             'total_withdrawals' => $totalWithdrawals,
             'withdrawals_by_date' => $withdrawalsByDate,
