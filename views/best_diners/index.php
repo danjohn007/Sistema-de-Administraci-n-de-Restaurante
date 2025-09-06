@@ -106,9 +106,9 @@
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
-                        <a href="<?= BASE_URL ?>/customers" class="btn btn-outline-secondary w-100">
+                        <a href="<?= BASE_URL ?>/best_diners" class="btn btn-outline-secondary w-100">
                             <i class="bi bi-people"></i><br>
-                            Todos los Clientes
+                            Inicio Clientes
                         </a>
                     </div>
                 </div>
