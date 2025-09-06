@@ -51,13 +51,26 @@ abstract class BaseModel {
         $placeholders = str_repeat('?,', count($fields) - 1) . '?';
         
         $query = "INSERT INTO {$this->table} (" . implode(',', $fields) . ") VALUES ({$placeholders})";
-        $stmt = $this->db->prepare($query);
         
-        if ($stmt->execute(array_values($data))) {
-            return $this->db->lastInsertId();
+        try {
+            $stmt = $this->db->prepare($query);
+            
+            if ($stmt->execute(array_values($data))) {
+                $insertId = $this->db->lastInsertId();
+                // Log successful creation for debugging
+                error_log("BaseModel::create SUCCESS - Table: {$this->table}, ID: $insertId, Data: " . json_encode($data));
+                return $insertId;
+            } else {
+                // Log execution failure
+                $errorInfo = $stmt->errorInfo();
+                error_log("BaseModel::create EXECUTION FAILED - Table: {$this->table}, Error: " . json_encode($errorInfo) . ", Query: $query, Data: " . json_encode($data));
+                return false;
+            }
+        } catch (Exception $e) {
+            // Log exception
+            error_log("BaseModel::create EXCEPTION - Table: {$this->table}, Error: " . $e->getMessage() . ", Query: $query, Data: " . json_encode($data));
+            return false;
         }
-        
-        return false;
     }
     
     public function update($id, $data) {

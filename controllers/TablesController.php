@@ -154,15 +154,22 @@ class TablesController extends BaseController {
             'waiter_id' => !empty($_POST['waiter_id']) ? (int)$_POST['waiter_id'] : null
         ];
         
+        // Log the table creation attempt for debugging
+        error_log("TablesController::processCreate - Attempting to create table with data: " . json_encode($tableData));
+        error_log("TablesController::processCreate - User role: " . ($_SESSION['user_role'] ?? 'NOT_SET'));
+        
         try {
             $tableId = $this->tableModel->create($tableData);
             
             if ($tableId) {
+                error_log("TablesController::processCreate - SUCCESS: Table created with ID: $tableId");
                 $this->redirect('tables', 'success', 'Mesa creada correctamente');
             } else {
-                throw new Exception('Error al crear la mesa');
+                error_log("TablesController::processCreate - FAILED: Table creation returned false");
+                throw new Exception('Error al crear la mesa - no se pudo insertar en la base de datos');
             }
         } catch (Exception $e) {
+            error_log("TablesController::processCreate - EXCEPTION: " . $e->getMessage());
             $waiters = $this->waiterModel->getWaitersWithUsers();
             $this->view('tables/create', [
                 'error' => 'Error al crear la mesa: ' . $e->getMessage(),
