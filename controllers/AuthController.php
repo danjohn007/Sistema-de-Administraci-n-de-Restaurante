@@ -49,11 +49,11 @@ class AuthController extends BaseController {
         $user = $this->userModel->authenticate($email, $password);
         
         if ($user) {
-            // Set session data
+            // Set session data (trim role to avoid whitespace issues)
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_email'] = $user['email'];
             $_SESSION['user_name'] = $user['name'];
-            $_SESSION['user_role'] = $user['role'];
+            $_SESSION['user_role'] = trim($user['role']);
             $_SESSION['last_activity'] = time();
             
             $this->redirect('dashboard', 'success', 'Bienvenido al sistema, ' . $user['name']);

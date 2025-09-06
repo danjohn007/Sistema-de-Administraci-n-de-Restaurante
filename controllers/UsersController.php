@@ -116,18 +116,29 @@ class UsersController extends BaseController {
             'name' => trim($_POST['name']),
             'email' => trim($_POST['email']),
             'password' => $_POST['password'],
-            'role' => $_POST['role']
+            'role' => trim($_POST['role']) // Trim role to avoid whitespace issues
         ];
+        
+        // Log the user creation attempt for debugging
+        error_log("UsersController::processCreate - Attempting to create user: " . json_encode([
+            'name' => $userData['name'],
+            'email' => $userData['email'],
+            'role' => $userData['role']
+        ]));
+        error_log("UsersController::processCreate - Current user role: " . ($_SESSION['user_role'] ?? 'NOT_SET'));
         
         try {
             $userId = $this->userModel->createUser($userData);
             
             if ($userId) {
+                error_log("UsersController::processCreate - SUCCESS: User created with ID: $userId");
                 $this->redirect('users', 'success', 'Usuario creado correctamente');
             } else {
-                throw new Exception('Error al crear el usuario');
+                error_log("UsersController::processCreate - FAILED: User creation returned false");
+                throw new Exception('Error al crear el usuario - no se pudo insertar en la base de datos');
             }
         } catch (Exception $e) {
+            error_log("UsersController::processCreate - EXCEPTION: " . $e->getMessage());
             $this->view('users/create', [
                 'error' => 'Error al crear el usuario: ' . $e->getMessage(),
                 'old' => $_POST,
