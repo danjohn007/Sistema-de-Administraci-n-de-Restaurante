@@ -622,5 +622,32 @@ class OrdersController extends BaseController {
             echo json_encode(['error' => 'Error searching customers: ' . $e->getMessage()]);
         }
     }
+    
+    // ============= EXPIRED ORDERS MANAGEMENT =============
+    
+    public function expiredOrders() {
+        $user = $this->getCurrentUser();
+        $filters = [];
+        
+        // Filter by waiter for non-admin users
+        if ($user['role'] === ROLE_WAITER) {
+            $waiter = $this->waiterModel->findBy('user_id', $user['id']);
+            if ($waiter) {
+                $filters['waiter_id'] = $waiter['id'];
+            } else {
+                // User is not a waiter, show empty list
+                $orders = [];
+            }
+        }
+        
+        if (!isset($orders)) {
+            $orders = $this->orderModel->getExpiredOrders($filters);
+        }
+        
+        $this->view('orders/expired', [
+            'orders' => $orders,
+            'user' => $user
+        ]);
+    }
 }
 ?>
