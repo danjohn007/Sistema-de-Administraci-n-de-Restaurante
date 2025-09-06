@@ -3,9 +3,14 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1><i class="bi bi-grid-3x3-gap"></i> <?= ($user['role'] === ROLE_WAITER) ? 'Consultar Mesas' : 'Gestión de Mesas' ?></h1>
     <?php if ($user['role'] === ROLE_ADMIN): ?>
-    <a href="<?= BASE_URL ?>/tables/create" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Nueva Mesa
-    </a>
+    <div>
+        <a href="<?= BASE_URL ?>/tables/zones" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-geo-alt"></i> Gestionar Zonas
+        </a>
+        <a href="<?= BASE_URL ?>/tables/create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Mesa
+        </a>
+    </div>
     <?php endif; ?>
 </div>
 

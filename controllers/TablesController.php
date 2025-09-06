@@ -199,9 +199,11 @@ class TablesController extends BaseController {
             $this->processEdit($id);
         } else {
             $waiters = $this->waiterModel->getWaitersWithUsers();
+            $zones = $this->tableZoneModel->getAllActive();
             $this->view('tables/edit', [
                 'table' => $table,
-                'waiters' => $waiters
+                'waiters' => $waiters,
+                'zones' => $zones
             ]);
         }
     }
@@ -213,11 +215,13 @@ class TablesController extends BaseController {
         
         if (!empty($errors)) {
             $waiters = $this->waiterModel->getWaitersWithUsers();
+            $zones = $this->tableZoneModel->getAllActive();
             $this->view('tables/edit', [
                 'errors' => $errors,
                 'table' => $table,
                 'old' => $_POST,
-                'waiters' => $waiters
+                'waiters' => $waiters,
+                'zones' => $zones
             ]);
             return;
         }
@@ -225,6 +229,7 @@ class TablesController extends BaseController {
         $tableData = [
             'number' => (int)$_POST['number'],
             'capacity' => (int)$_POST['capacity'],
+            'zone' => $_POST['zone'] ?? $table['zone'],
             'waiter_id' => !empty($_POST['waiter_id']) ? (int)$_POST['waiter_id'] : null
         ];
         
