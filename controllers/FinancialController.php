@@ -5,6 +5,7 @@ class FinancialController extends BaseController {
     private $expenseModel;
     private $cashWithdrawalModel;
     private $cashClosureModel;
+    private $ticketModel;
     
     public function __construct() {
         parent::__construct();
@@ -15,6 +16,7 @@ class FinancialController extends BaseController {
         $this->expenseModel = new Expense();
         $this->cashWithdrawalModel = new CashWithdrawal();
         $this->cashClosureModel = new CashClosure();
+        $this->ticketModel = new Ticket();
     }
     
     // Dashboard financiero
@@ -32,6 +34,17 @@ class FinancialController extends BaseController {
         $recentWithdrawals = $this->cashWithdrawalModel->getRecentWithdrawals(5);
         $recentClosures = $this->cashClosureModel->getRecentClosures(5);
         
+        // Income statistics
+        $totalIncome = $this->ticketModel->getTotalIncome($dateFrom, $dateTo);
+        $incomeByPaymentMethod = $this->ticketModel->getIncomeByPaymentMethod($dateFrom, $dateTo);
+        $incomeVsExpenses = $this->ticketModel->getIncomeVsExpensesData($dateFrom, $dateTo);
+        
+        // Calculate total expenses for comparison
+        $totalExpenseAmount = 0;
+        foreach ($totalExpenses as $expense) {
+            $totalExpenseAmount += (float)$expense['total_amount'];
+        }
+        
         // Estadísticas de sucursales si es admin
         $branches = [];
         if ($user['role'] === ROLE_ADMIN) {
@@ -44,6 +57,10 @@ class FinancialController extends BaseController {
             'recent_expenses' => $recentExpenses,
             'recent_withdrawals' => $recentWithdrawals,
             'recent_closures' => $recentClosures,
+            'total_income' => $totalIncome,
+            'income_by_payment_method' => $incomeByPaymentMethod,
+            'income_vs_expenses' => $incomeVsExpenses,
+            'total_expense_amount' => $totalExpenseAmount,
             'branches' => $branches,
             'date_from' => $dateFrom,
             'date_to' => $dateTo,

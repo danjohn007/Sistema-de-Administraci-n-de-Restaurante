@@ -337,13 +337,38 @@ class OrdersController extends BaseController {
             // Create new customer
             try {
                 $customerData = [
-                    'name' => $_POST['new_customer_name'],
-                    'phone' => $_POST['new_customer_phone']
+                    'name' => trim($_POST['new_customer_name']),
+                    'phone' => trim($_POST['new_customer_phone'])
                 ];
+                
+                // Validate customer data before creation
+                if (empty($customerData['name']) || empty($customerData['phone'])) {
+                    throw new Exception('Nombre y teléfono del cliente son requeridos');
+                }
+                
                 $customerId = $this->customerModel->findOrCreateByPhone($customerData);
+                
+                if (!$customerId) {
+                    throw new Exception('No se pudo crear o encontrar el cliente en la base de datos');
+                }
+                
             } catch (Exception $e) {
-                // If customer creation fails, continue without customer
-                error_log("Failed to create customer: " . $e->getMessage());
+                // Show error to user instead of silently failing
+                $user = $this->getCurrentUser();
+                $waiters = [];
+                if ($user['role'] === ROLE_ADMIN || $user['role'] === ROLE_CASHIER) {
+                    $waiters = $this->waiterModel->getWaitersWithUsers();
+                }
+                
+                $this->view('orders/create', [
+                    'error' => 'Error al registrar cliente: ' . $e->getMessage(),
+                    'old' => $_POST,
+                    'tables' => $this->tableModel->findAll(['active' => 1], 'number ASC'),
+                    'dishes' => $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC'),
+                    'waiters' => $waiters,
+                    'user' => $user
+                ]);
+                return;
             }
         }
         
@@ -596,6 +621,33 @@ class OrdersController extends BaseController {
             http_response_code(500);
             echo json_encode(['error' => 'Error searching customers: ' . $e->getMessage()]);
         }
+    }
+    
+    // ============= EXPIRED ORDERS MANAGEMENT =============
+    
+    public function expiredOrders() {
+        $user = $this->getCurrentUser();
+        $filters = [];
+        
+        // Filter by waiter for non-admin users
+        if ($user['role'] === ROLE_WAITER) {
+            $waiter = $this->waiterModel->findBy('user_id', $user['id']);
+            if ($waiter) {
+                $filters['waiter_id'] = $waiter['id'];
+            } else {
+                // User is not a waiter, show empty list
+                $orders = [];
+            }
+        }
+        
+        if (!isset($orders)) {
+            $orders = $this->orderModel->getExpiredOrders($filters);
+        }
+        
+        $this->view('orders/expired', [
+            'orders' => $orders,
+            'user' => $user
+        ]);
     }
 }
 ?>

@@ -78,6 +78,37 @@
                     </div>
 
                     <div class="mb-3">
+                        <label for="zone" class="form-label">
+                            <i class="bi bi-geo-alt"></i> Zona *
+                        </label>
+                        <select 
+                            class="form-select <?= isset($errors['zone']) ? 'is-invalid' : '' ?>" 
+                            id="zone" 
+                            name="zone"
+                            required
+                        >
+                            <option value="">Seleccionar zona...</option>
+                            <?php foreach ($zones as $zone): ?>
+                                <option value="<?= htmlspecialchars($zone['name']) ?>" 
+                                        <?= ($old['zone'] ?? 'Salón') == $zone['name'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($zone['name']) ?>
+                                    <?php if (!empty($zone['description'])): ?>
+                                        - <?= htmlspecialchars($zone['description']) ?>
+                                    <?php endif; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <?php if (isset($errors['zone'])): ?>
+                        <div class="invalid-feedback">
+                            <?= htmlspecialchars($errors['zone']) ?>
+                        </div>
+                        <?php endif; ?>
+                        <div class="form-text">
+                            Área donde se ubicará la mesa
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="waiter_id" class="form-label">
                             <i class="bi bi-person-badge"></i> Mesero Asignado
                         </label>

@@ -119,5 +119,44 @@ class Table extends BaseModel {
         
         return $stmt->fetchAll();
     }
+    
+    // ============= DAILY TABLE LIBERATION =============
+    
+    public function liberateTablesDaily() {
+        // Free all tables and set them as available
+        $query = "UPDATE {$this->table} 
+                  SET status = ?, waiter_id = NULL, updated_at = CURRENT_TIMESTAMP
+                  WHERE active = 1";
+        
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([TABLE_AVAILABLE]);
+    }
+    
+    public function getTablesWithPendingOrders() {
+        // Get tables that have orders that are not delivered (pending closure)
+        $query = "SELECT DISTINCT t.*, 
+                         COUNT(o.id) as pending_orders_count,
+                         MIN(o.created_at) as oldest_order_time,
+                         SUM(o.total) as total_pending_amount
+                  FROM {$this->table} t
+                  INNER JOIN orders o ON t.id = o.table_id
+                  WHERE t.active = 1 
+                  AND o.status IN ('pendiente', 'en_preparacion', 'listo')
+                  AND DATE(o.created_at) < CURDATE()
+                  GROUP BY t.id
+                  ORDER BY oldest_order_time ASC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+        
+        return $stmt->fetchAll();
+    }
+    
+    public function markTableWithExpiredOrders($tableId) {
+        // Mark table status to indicate it has expired orders
+        return $this->update($tableId, [
+            'status' => 'cuenta_solicitada' // Reuse existing status to indicate pending closure
+        ]);
+    }
 }
 ?>

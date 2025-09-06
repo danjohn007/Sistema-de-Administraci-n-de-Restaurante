@@ -57,6 +57,9 @@ class DashboardController extends BaseController {
         // Monthly revenue (simplified)
         $monthlyRevenue = $this->getMonthlyRevenue();
         
+        // Expired orders count
+        $expiredOrdersCount = $this->orderModel->getExpiredOrdersCount();
+        
         return [
             'table_stats' => $tableStats,
             'daily_sales' => $dailySales,
@@ -66,7 +69,8 @@ class DashboardController extends BaseController {
             'total_tables' => $this->tableModel->count(['active' => 1]),
             'total_dishes' => $this->dishModel->count(['active' => 1]),
             'pending_orders' => $this->orderModel->count(['status' => ORDER_PENDING]),
-            'ready_orders' => $this->orderModel->count(['status' => ORDER_READY])
+            'ready_orders' => $this->orderModel->count(['status' => ORDER_READY]),
+            'expired_orders_count' => $expiredOrdersCount
         ];
     }
     
@@ -96,12 +100,16 @@ class DashboardController extends BaseController {
             'status' => ORDER_PENDING
         ]);
         
+        // Get expired orders for this waiter
+        $expiredOrdersCount = $this->orderModel->getExpiredOrdersCount($waiter['id']);
+        
         return [
             'waiter' => $waiter,
             'assigned_tables' => $assignedTables,
             'today_orders' => $todayOrders,
             'waiter_stats' => $stats,
-            'pending_orders' => $pendingOrders
+            'pending_orders' => $pendingOrders,
+            'expired_orders_count' => $expiredOrdersCount
         ];
     }
     

@@ -273,5 +273,112 @@ class Ticket extends BaseModel {
         
         return $stmt->fetchAll();
     }
+    
+    // ============= INCOME REPORTING METHODS =============
+    
+    public function getTotalIncome($dateFrom = null, $dateTo = null) {
+        $dateFrom = $dateFrom ?: date('Y-m-01');
+        $dateTo = $dateTo ?: date('Y-m-d');
+        
+        $query = "SELECT 
+                    COUNT(*) as total_tickets,
+                    SUM(subtotal) as total_subtotal,
+                    SUM(tax) as total_tax,
+                    SUM(total) as total_income
+                  FROM {$this->table} 
+                  WHERE DATE(created_at) BETWEEN ? AND ?";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$dateFrom, $dateTo]);
+        
+        return $stmt->fetch() ?: [
+            'total_tickets' => 0,
+            'total_subtotal' => 0,
+            'total_tax' => 0,
+            'total_income' => 0
+        ];
+    }
+    
+    public function getIncomeByDate($dateFrom = null, $dateTo = null) {
+        $dateFrom = $dateFrom ?: date('Y-m-01');
+        $dateTo = $dateTo ?: date('Y-m-d');
+        
+        $query = "SELECT 
+                    DATE(created_at) as date,
+                    COUNT(*) as tickets_count,
+                    SUM(subtotal) as subtotal,
+                    SUM(tax) as tax,
+                    SUM(total) as total_income
+                  FROM {$this->table} 
+                  WHERE DATE(created_at) BETWEEN ? AND ?
+                  GROUP BY DATE(created_at)
+                  ORDER BY DATE(created_at) ASC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$dateFrom, $dateTo]);
+        
+        return $stmt->fetchAll();
+    }
+    
+    public function getIncomeByPaymentMethod($dateFrom = null, $dateTo = null) {
+        $dateFrom = $dateFrom ?: date('Y-m-01');
+        $dateTo = $dateTo ?: date('Y-m-d');
+        
+        $query = "SELECT 
+                    payment_method,
+                    COUNT(*) as tickets_count,
+                    SUM(total) as total_income
+                  FROM {$this->table} 
+                  WHERE DATE(created_at) BETWEEN ? AND ?
+                  GROUP BY payment_method
+                  ORDER BY total_income DESC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$dateFrom, $dateTo]);
+        
+        return $stmt->fetchAll();
+    }
+    
+    public function getIncomeVsExpensesData($dateFrom = null, $dateTo = null) {
+        $dateFrom = $dateFrom ?: date('Y-m-01');
+        $dateTo = $dateTo ?: date('Y-m-d');
+        
+        // Get income by date
+        $incomeData = $this->getIncomeByDate($dateFrom, $dateTo);
+        
+        // Get expenses by date
+        $expenseModel = new Expense();
+        $expenseQuery = "SELECT 
+                            DATE(expense_date) as date,
+                            SUM(amount) as total_expenses
+                         FROM expenses 
+                         WHERE DATE(expense_date) BETWEEN ? AND ?
+                         GROUP BY DATE(expense_date)
+                         ORDER BY DATE(expense_date) ASC";
+        
+        $stmt = $this->db->prepare($expenseQuery);
+        $stmt->execute([$dateFrom, $dateTo]);
+        $expenseData = $stmt->fetchAll();
+        
+        // Combine income and expense data by date
+        $combinedData = [];
+        $expenseByDate = [];
+        
+        foreach ($expenseData as $expense) {
+            $expenseByDate[$expense['date']] = (float)$expense['total_expenses'];
+        }
+        
+        foreach ($incomeData as $income) {
+            $date = $income['date'];
+            $combinedData[] = [
+                'date' => $date,
+                'income' => (float)$income['total_income'],
+                'expenses' => $expenseByDate[$date] ?? 0,
+                'net_profit' => (float)$income['total_income'] - ($expenseByDate[$date] ?? 0)
+            ];
+        }
+        
+        return $combinedData;
+    }
 }
 ?>

@@ -465,5 +465,82 @@ class Order extends BaseModel {
             throw $e;
         }
     }
+    
+    // ============= EXPIRED ORDERS MANAGEMENT =============
+    
+    public function getExpiredOrders($filters = []) {
+        $query = "SELECT o.*, t.number as table_number, 
+                         u.name as waiter_name, w.employee_code,
+                         COUNT(oi.id) as items_count,
+                         COALESCE(SUM(oi.subtotal), 0) as total,
+                         TIMESTAMPDIFF(HOUR, o.created_at, NOW()) as hours_since_created
+                  FROM {$this->table} o
+                  LEFT JOIN tables t ON o.table_id = t.id
+                  LEFT JOIN waiters w ON o.waiter_id = w.id
+                  LEFT JOIN users u ON w.user_id = u.id
+                  LEFT JOIN order_items oi ON o.id = oi.order_id
+                  WHERE o.status IN ('pendiente', 'en_preparacion', 'listo')
+                  AND DATE(o.created_at) < CURDATE()";
+        
+        $params = [];
+        
+        // Apply filters
+        if (isset($filters['waiter_id'])) {
+            $query .= " AND o.waiter_id = ?";
+            $params[] = $filters['waiter_id'];
+        }
+        
+        if (isset($filters['table_id'])) {
+            $query .= " AND o.table_id = ?";
+            $params[] = $filters['table_id'];
+        }
+        
+        $query .= " GROUP BY o.id
+                   ORDER BY o.created_at ASC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+        
+        return $stmt->fetchAll();
+    }
+    
+    public function getExpiredOrdersCount($waiterId = null) {
+        $query = "SELECT COUNT(*) as count 
+                  FROM {$this->table} 
+                  WHERE status IN ('pendiente', 'en_preparacion', 'listo')
+                  AND DATE(created_at) < CURDATE()";
+        
+        $params = [];
+        
+        if ($waiterId) {
+            $query .= " AND waiter_id = ?";
+            $params[] = $waiterId;
+        }
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+        
+        $result = $stmt->fetch();
+        return $result['count'] ?? 0;
+    }
+    
+    public function getExpiredOrdersByTable() {
+        $query = "SELECT t.id as table_id, t.number as table_number, 
+                         COUNT(o.id) as expired_orders_count,
+                         SUM(o.total) as total_pending_amount,
+                         MIN(o.created_at) as oldest_order_time
+                  FROM tables t
+                  INNER JOIN {$this->table} o ON t.id = o.table_id
+                  WHERE o.status IN ('pendiente', 'en_preparacion', 'listo')
+                  AND DATE(o.created_at) < CURDATE()
+                  AND t.active = 1
+                  GROUP BY t.id, t.number
+                  ORDER BY oldest_order_time ASC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+        
+        return $stmt->fetchAll();
+    }
 }
 ?>

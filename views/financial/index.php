@@ -52,6 +52,128 @@
     </div>
 </div>
 
+<!-- Income vs Expenses Summary -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted mb-1">Ingresos Totales</h6>
+                        <h3 class="mb-0 text-success">$<?= number_format($total_income['total_income'] ?? 0, 2) ?></h3>
+                        <small class="text-muted"><?= $total_income['total_tickets'] ?? 0 ?> tickets</small>
+                    </div>
+                    <div class="text-success">
+                        <i class="bi bi-arrow-up-circle" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted mb-1">Gastos Totales</h6>
+                        <h3 class="mb-0 text-danger">$<?= number_format($total_expense_amount, 2) ?></h3>
+                        <small class="text-muted">Período seleccionado</small>
+                    </div>
+                    <div class="text-danger">
+                        <i class="bi bi-arrow-down-circle" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card <?= (($total_income['total_income'] ?? 0) - $total_expense_amount) >= 0 ? 'success' : 'warning' ?>">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted mb-1">Utilidad Neta</h6>
+                        <h3 class="mb-0 <?= (($total_income['total_income'] ?? 0) - $total_expense_amount) >= 0 ? 'text-success' : 'text-warning' ?>">
+                            $<?= number_format(($total_income['total_income'] ?? 0) - $total_expense_amount, 2) ?>
+                        </h3>
+                        <small class="text-muted">Ingresos - Gastos</small>
+                    </div>
+                    <div class="<?= (($total_income['total_income'] ?? 0) - $total_expense_amount) >= 0 ? 'text-success' : 'text-warning' ?>">
+                        <i class="bi bi-calculator" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted mb-1">Margen de Ganancia</h6>
+                        <h3 class="mb-0 text-info">
+                            <?php 
+                            $totalIncome = $total_income['total_income'] ?? 0;
+                            $margin = $totalIncome > 0 ? (($totalIncome - $total_expense_amount) / $totalIncome) * 100 : 0;
+                            echo number_format($margin, 1) . '%';
+                            ?>
+                        </h3>
+                        <small class="text-muted">Porcentaje de utilidad</small>
+                    </div>
+                    <div class="text-info">
+                        <i class="bi bi-percent" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Income vs Expenses Chart -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-bar-chart"></i> Ingresos vs Egresos
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="incomeVsExpensesChart" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-credit-card"></i> Ingresos por Método de Pago
+                </h5>
+            </div>
+            <div class="card-body">
+                <?php if (!empty($income_by_payment_method)): ?>
+                    <?php foreach ($income_by_payment_method as $payment): ?>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <span class="badge bg-primary">
+                                <?= ucfirst(htmlspecialchars($payment['payment_method'])) ?>
+                            </span>
+                            <small class="text-muted">(<?= $payment['tickets_count'] ?> tickets)</small>
+                        </div>
+                        <strong class="text-success">$<?= number_format($payment['total_income'], 2) ?></strong>
+                    </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <p class="text-muted text-center">No hay ingresos registrados en el período seleccionado</p>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Estadísticas por categoría -->
 <div class="row mb-4">
     <div class="col-md-6">
@@ -219,3 +341,116 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 <?php endif; ?>
+
+<!-- Chart.js for Income vs Expenses Chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Income vs Expenses Chart
+    const incomeVsExpensesData = <?= json_encode($income_vs_expenses) ?>;
+    
+    if (incomeVsExpensesData && incomeVsExpensesData.length > 0) {
+        const ctx = document.getElementById('incomeVsExpensesChart').getContext('2d');
+        
+        const dates = incomeVsExpensesData.map(item => {
+            const date = new Date(item.date);
+            return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+        });
+        
+        const incomeData = incomeVsExpensesData.map(item => parseFloat(item.income));
+        const expenseData = incomeVsExpensesData.map(item => parseFloat(item.expenses));
+        const netProfitData = incomeVsExpensesData.map(item => parseFloat(item.net_profit));
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: 'Ingresos',
+                        data: incomeData,
+                        borderColor: 'rgb(40, 167, 69)',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Gastos',
+                        data: expenseData,
+                        borderColor: 'rgb(220, 53, 69)',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Utilidad Neta',
+                        data: netProfitData,
+                        borderColor: 'rgb(0, 123, 255)',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.4,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: false
+                    },
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + new Intl.NumberFormat('es-MX').format(value);
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false
+                }
+            }
+        });
+    } else {
+        // Show message when no data available
+        const chartContainer = document.getElementById('incomeVsExpensesChart').parentElement;
+        chartContainer.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-bar-chart display-1"></i><p>No hay datos suficientes para mostrar el gráfico en el período seleccionado</p></div>';
+    }
+});
+</script>
+
+<style>
+.stat-card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.15s ease-in-out;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.success {
+    border-left: 4px solid #28a745;
+}
+
+.stat-card.danger {
+    border-left: 4px solid #dc3545;
+}
+
+.stat-card.warning {
+    border-left: 4px solid #ffc107;
+}
+
+.stat-card.info {
+    border-left: 4px solid #17a2b8;
+}
+</style>
