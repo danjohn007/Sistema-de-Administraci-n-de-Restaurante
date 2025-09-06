@@ -25,26 +25,55 @@ class Ticket extends BaseModel {
                 throw new Exception('Orden no encontrada');
             }
             
-            // Calculate totals
-            $subtotal = $order['total'];
-            $tax = $subtotal * 0.16; // 16% IVA
-            $total = $subtotal + $tax;
+            if ($order['status'] !== ORDER_READY) {
+                throw new Exception('El pedido debe estar en estado "Listo" para generar el ticket');
+            }
+            
+            // Check if order already has a ticket
+            $existingTicket = $this->findBy('order_id', $orderId);
+            if ($existingTicket) {
+                throw new Exception('Este pedido ya tiene un ticket generado');
+            }
+            
+            // Validate order is from today (cannot close orders from previous days without proper process)
+            $orderDate = date('Y-m-d', strtotime($order['created_at']));
+            $today = date('Y-m-d');
+            if ($orderDate !== $today) {
+                throw new Exception('Solo se pueden cerrar pedidos del día actual');
+            }
+            
+            // Calculate totals with proper rounding
+            $subtotal = floatval($order['total']);
+            $tax = round($subtotal * 0.16, 2); // 16% IVA
+            $total = round($subtotal + $tax, 2);
+            
+            // Validate data before insertion
+            if ($subtotal <= 0) {
+                throw new Exception('El subtotal debe ser mayor a cero');
+            }
+            
+            if (!in_array($paymentMethod, ['efectivo', 'tarjeta', 'transferencia'])) {
+                throw new Exception('Método de pago inválido');
+            }
             
             // Create ticket
             $ticketData = [
-                'order_id' => $orderId,
+                'order_id' => intval($orderId),
                 'ticket_number' => $this->generateTicketNumber(),
-                'cashier_id' => $cashierId,
+                'cashier_id' => intval($cashierId),
                 'subtotal' => $subtotal,
                 'tax' => $tax,
                 'total' => $total,
                 'payment_method' => $paymentMethod
             ];
             
+            // Log ticket creation attempt for debugging
+            error_log("Ticket creation attempt: " . json_encode($ticketData));
+            
             $ticketId = $this->create($ticketData);
             
             if (!$ticketId) {
-                throw new Exception('Error al crear el ticket');
+                throw new Exception('Error al crear el ticket en la base de datos');
             }
             
             // Update order status
@@ -55,10 +84,12 @@ class Ticket extends BaseModel {
             $tableModel->updateTableStatus($order['table_id'], TABLE_AVAILABLE);
             
             $this->db->commit();
+            error_log("Ticket created successfully with ID: $ticketId");
             return $ticketId;
             
         } catch (Exception $e) {
             $this->db->rollback();
+            error_log("Ticket creation failed: " . $e->getMessage());
             throw $e;
         }
     }
@@ -67,10 +98,12 @@ class Ticket extends BaseModel {
         try {
             $this->db->beginTransaction();
             
-            // Get order details and validate they're all from the same table
+            // Get order details and validate they're all from the same table, same day, and same waiter
             $orderModel = new Order();
             $orders = [];
             $tableId = null;
+            $waiterId = null;
+            $orderDate = null;
             $totalSubtotal = 0;
             
             foreach ($orderIds as $orderId) {
@@ -96,6 +129,21 @@ class Ticket extends BaseModel {
                     throw new Exception('Todas las órdenes deben ser de la misma mesa');
                 }
                 
+                // Validate all orders are from the same waiter
+                if ($waiterId === null) {
+                    $waiterId = $order['waiter_id'];
+                } elseif ($waiterId !== $order['waiter_id']) {
+                    throw new Exception('Solo se pueden unir pedidos del mismo mesero');
+                }
+                
+                // Validate all orders are from the same day
+                $currentOrderDate = date('Y-m-d', strtotime($order['created_at']));
+                if ($orderDate === null) {
+                    $orderDate = $currentOrderDate;
+                } elseif ($orderDate !== $currentOrderDate) {
+                    throw new Exception('Solo se pueden unir pedidos del mismo día');
+                }
+                
                 $orders[] = $order;
                 $totalSubtotal += $order['total'];
             }
@@ -104,26 +152,38 @@ class Ticket extends BaseModel {
                 throw new Exception('No se encontraron órdenes válidas');
             }
             
-            // Calculate totals
-            $tax = $totalSubtotal * 0.16; // 16% IVA
-            $total = $totalSubtotal + $tax;
+            // Calculate totals with proper rounding
+            $tax = round($totalSubtotal * 0.16, 2); // 16% IVA
+            $total = round($totalSubtotal + $tax, 2);
+            
+            // Validate data before insertion
+            if ($totalSubtotal <= 0) {
+                throw new Exception('El subtotal debe ser mayor a cero');
+            }
+            
+            if (!in_array($paymentMethod, ['efectivo', 'tarjeta', 'transferencia'])) {
+                throw new Exception('Método de pago inválido');
+            }
             
             // Create ticket for the first order (as main order)
             $mainOrder = $orders[0];
             $ticketData = [
-                'order_id' => $mainOrder['id'],
+                'order_id' => intval($mainOrder['id']),
                 'ticket_number' => $this->generateTicketNumber(),
-                'cashier_id' => $cashierId,
+                'cashier_id' => intval($cashierId),
                 'subtotal' => $totalSubtotal,
                 'tax' => $tax,
                 'total' => $total,
                 'payment_method' => $paymentMethod
             ];
             
+            // Log ticket creation attempt for debugging
+            error_log("Multiple orders ticket creation attempt: " . json_encode($ticketData));
+            
             $ticketId = $this->create($ticketData);
             
             if (!$ticketId) {
-                throw new Exception('Error al crear el ticket');
+                throw new Exception('Error al crear el ticket en la base de datos');
             }
             
             // Update all order statuses to delivered
@@ -136,10 +196,12 @@ class Ticket extends BaseModel {
             $tableModel->updateTableStatus($tableId, TABLE_AVAILABLE);
             
             $this->db->commit();
+            error_log("Multiple orders ticket created successfully with ID: $ticketId");
             return $ticketId;
             
         } catch (Exception $e) {
             $this->db->rollback();
+            error_log("Multiple orders ticket creation failed: " . $e->getMessage());
             throw $e;
         }
     }
