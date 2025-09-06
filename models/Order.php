@@ -568,5 +568,28 @@ class Order extends BaseModel {
         
         return $stmt->fetchAll();
     }
+    
+    public function getExpiredOrdersReadyForTicket() {
+        $query = "SELECT o.*, t.number as table_number, 
+                         u.name as waiter_name, w.employee_code,
+                         COUNT(oi.id) as items_count,
+                         COALESCE(SUM(oi.subtotal), 0) as total,
+                         TIMESTAMPDIFF(HOUR, o.created_at, NOW()) as hours_since_created
+                  FROM {$this->table} o
+                  LEFT JOIN tables t ON o.table_id = t.id
+                  LEFT JOIN waiters w ON o.waiter_id = w.id
+                  LEFT JOIN users u ON w.user_id = u.id
+                  LEFT JOIN order_items oi ON o.id = oi.order_id
+                  WHERE o.status = ? 
+                  AND DATE(o.created_at) < CURDATE()
+                  AND o.id NOT IN (SELECT DISTINCT order_id FROM tickets WHERE order_id IS NOT NULL)
+                  GROUP BY o.id
+                  ORDER BY o.created_at ASC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([ORDER_READY]);
+        
+        return $stmt->fetchAll();
+    }
 }
 ?>

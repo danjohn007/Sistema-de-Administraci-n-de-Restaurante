@@ -149,6 +149,12 @@
                             <option value="transferencia" <?= (($old['payment_method'] ?? '') === 'transferencia') ? 'selected' : '' ?>>
                                 <i class="bi bi-bank"></i> Transferencia
                             </option>
+                            <option value="intercambio" <?= (($old['payment_method'] ?? '') === 'intercambio') ? 'selected' : '' ?>>
+                                <i class="bi bi-arrow-left-right"></i> Intercambio
+                            </option>
+                            <option value="pendiente_por_cobrar" <?= (($old['payment_method'] ?? '') === 'pendiente_por_cobrar') ? 'selected' : '' ?>>
+                                <i class="bi bi-clock-history"></i> Pendiente por Cobrar
+                            </option>
                         </select>
                         <?php if (isset($errors['payment_method'])): ?>
                             <div class="invalid-feedback">
@@ -169,7 +175,7 @@
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
                         <strong>Información:</strong><br>
-                        Se aplicará un 16% de IVA al subtotal total de todos los pedidos seleccionados.
+                        Los precios ya incluyen 16% de IVA. En el ticket se mostrará desglosado el subtotal sin IVA y el impuesto por separado.
                     </div>
                 </div>
             </div>
@@ -227,9 +233,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const selectedTable = tableData.find(t => t.table_id == tableId);
                 
                 if (selectedTable) {
-                    const subtotal = selectedTable.total_amount;
-                    const tax = subtotal * 0.16;
-                    const total = subtotal + tax;
+                    const totalWithTax = selectedTable.total_amount;
+                    const subtotal = totalWithTax / 1.16;
+                    const tax = totalWithTax - subtotal;
+                    const total = totalWithTax;
                     
                     let ordersList = '';
                     selectedTable.orders.forEach(order => {

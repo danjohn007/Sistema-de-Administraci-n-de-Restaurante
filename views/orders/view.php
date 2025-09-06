@@ -91,9 +91,6 @@
                             <option value="<?= ORDER_READY ?>" <?= $order['status'] === ORDER_READY ? 'selected' : '' ?>>
                                 Listo
                             </option>
-                            <option value="<?= ORDER_DELIVERED ?>" <?= $order['status'] === ORDER_DELIVERED ? 'selected' : '' ?>>
-                                Entregado
-                            </option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">

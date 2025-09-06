@@ -3,6 +3,12 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1><i class="bi bi-receipt"></i> Gestión de Tickets</h1>
     <div>
+        <a href="<?= BASE_URL ?>/tickets/pendingPayments" class="btn btn-outline-warning me-2">
+            <i class="bi bi-clock-history"></i> Cuentas Pendientes
+        </a>
+        <a href="<?= BASE_URL ?>/tickets/createExpiredTicket" class="btn btn-outline-danger me-2">
+            <i class="bi bi-exclamation-triangle"></i> Tickets Vencidos
+        </a>
         <a href="<?= BASE_URL ?>/tickets/create" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Generar Ticket
         </a>

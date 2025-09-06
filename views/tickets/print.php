@@ -218,7 +218,9 @@ function getPaymentMethodText($method) {
     $methods = [
         'efectivo' => 'EFECTIVO',
         'tarjeta' => 'TARJETA',
-        'transferencia' => 'TRANSFERENCIA'
+        'transferencia' => 'TRANSFERENCIA',
+        'intercambio' => 'INTERCAMBIO',
+        'pendiente_por_cobrar' => 'PENDIENTE POR COBRAR'
     ];
     
     return $methods[$method] ?? strtoupper($method);

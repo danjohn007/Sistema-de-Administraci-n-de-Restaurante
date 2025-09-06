@@ -43,16 +43,18 @@ class Ticket extends BaseModel {
             }
             
             // Calculate totals with proper rounding
-            $subtotal = floatval($order['total']);
-            $tax = round($subtotal * 0.16, 2); // 16% IVA
-            $total = round($subtotal + $tax, 2);
+            // Prices already include 16% IVA, so we need to separate it
+            $totalWithTax = floatval($order['total']);
+            $subtotal = round($totalWithTax / 1.16, 2); // Remove 16% IVA to get subtotal
+            $tax = round($totalWithTax - $subtotal, 2); // Calculate the IVA amount
+            $total = $totalWithTax; // Total remains the same
             
             // Validate data before insertion
             if ($subtotal <= 0) {
                 throw new Exception('El subtotal debe ser mayor a cero');
             }
             
-            if (!in_array($paymentMethod, ['efectivo', 'tarjeta', 'transferencia'])) {
+            if (!in_array($paymentMethod, ['efectivo', 'tarjeta', 'transferencia', 'intercambio', 'pendiente_por_cobrar'])) {
                 throw new Exception('Método de pago inválido');
             }
             
@@ -153,15 +155,18 @@ class Ticket extends BaseModel {
             }
             
             // Calculate totals with proper rounding
-            $tax = round($totalSubtotal * 0.16, 2); // 16% IVA
-            $total = round($totalSubtotal + $tax, 2);
+            // Prices already include 16% IVA, so we need to separate it
+            $totalWithTax = $totalSubtotal;
+            $subtotal = round($totalWithTax / 1.16, 2); // Remove 16% IVA to get subtotal
+            $tax = round($totalWithTax - $subtotal, 2); // Calculate the IVA amount
+            $total = $totalWithTax; // Total remains the same
             
             // Validate data before insertion
-            if ($totalSubtotal <= 0) {
+            if ($subtotal <= 0) {
                 throw new Exception('El subtotal debe ser mayor a cero');
             }
             
-            if (!in_array($paymentMethod, ['efectivo', 'tarjeta', 'transferencia'])) {
+            if (!in_array($paymentMethod, ['efectivo', 'tarjeta', 'transferencia', 'intercambio', 'pendiente_por_cobrar'])) {
                 throw new Exception('Método de pago inválido');
             }
             
@@ -171,7 +176,7 @@ class Ticket extends BaseModel {
                 'order_id' => intval($mainOrder['id']),
                 'ticket_number' => $this->generateTicketNumber(),
                 'cashier_id' => intval($cashierId),
-                'subtotal' => $totalSubtotal,
+                'subtotal' => $subtotal,
                 'tax' => $tax,
                 'total' => $total,
                 'payment_method' => $paymentMethod
@@ -441,6 +446,118 @@ class Ticket extends BaseModel {
         }
         
         return $combinedData;
+    }
+    
+    public function getPendingPayments() {
+        $query = "SELECT t.*, 
+                         tn.table_number,
+                         u.name as cashier_name,
+                         w.name as waiter_name,
+                         w.employee_code
+                  FROM tickets t
+                  LEFT JOIN orders o ON t.order_id = o.id
+                  LEFT JOIN tables tn ON o.table_id = tn.id
+                  LEFT JOIN users u ON t.cashier_id = u.id
+                  LEFT JOIN waiters w ON o.waiter_id = w.id
+                  WHERE t.payment_method = 'pendiente_por_cobrar'
+                  ORDER BY t.created_at DESC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+    
+    public function updatePaymentMethod($ticketId, $paymentMethod) {
+        $validMethods = ['efectivo', 'tarjeta', 'transferencia', 'intercambio'];
+        if (!in_array($paymentMethod, $validMethods)) {
+            return false;
+        }
+        
+        $query = "UPDATE tickets SET payment_method = ? WHERE id = ?";
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([$paymentMethod, $ticketId]);
+    }
+    
+    public function createExpiredOrderTicket($orderId, $cashierId, $paymentMethod = 'efectivo') {
+        try {
+            $this->db->beginTransaction();
+            
+            $orderModel = new Order();
+            $tableModel = new Table();
+            
+            // Get order details
+            $order = $orderModel->find($orderId);
+            if (!$order) {
+                throw new Exception('Pedido no encontrado');
+            }
+            
+            if ($order['status'] !== ORDER_READY) {
+                throw new Exception('El pedido debe estar en estado "Listo" para generar el ticket');
+            }
+            
+            // Check if order already has a ticket
+            $existingTicket = $this->findBy('order_id', $orderId);
+            if ($existingTicket) {
+                throw new Exception('Este pedido ya tiene un ticket generado');
+            }
+            
+            // For expired orders, we allow ticket generation with today's date
+            // This ensures the income is recorded for today's date in reports
+            
+            // Calculate totals with proper rounding
+            // Prices already include 16% IVA, so we need to separate it
+            $totalWithTax = floatval($order['total']);
+            $subtotal = round($totalWithTax / 1.16, 2); // Remove 16% IVA to get subtotal
+            $tax = round($totalWithTax - $subtotal, 2); // Calculate the IVA amount
+            $total = $totalWithTax; // Total remains the same
+            
+            // Validate data before insertion
+            if ($subtotal <= 0) {
+                throw new Exception('El subtotal debe ser mayor a cero');
+            }
+            
+            if (!in_array($paymentMethod, ['efectivo', 'tarjeta', 'transferencia', 'intercambio', 'pendiente_por_cobrar'])) {
+                throw new Exception('Método de pago inválido');
+            }
+            
+            // Create ticket with today's date for proper reporting
+            $ticketData = [
+                'order_id' => intval($orderId),
+                'ticket_number' => $this->generateTicketNumber(),
+                'cashier_id' => intval($cashierId),
+                'subtotal' => $subtotal,
+                'tax' => $tax,
+                'total' => $total,
+                'payment_method' => $paymentMethod,
+                'created_at' => date('Y-m-d H:i:s') // Force today's date for reporting
+            ];
+            
+            // Log ticket creation attempt for debugging
+            error_log("Expired order ticket creation attempt: " . json_encode($ticketData));
+            
+            $ticketId = $this->create($ticketData);
+            
+            if (!$ticketId) {
+                throw new Exception('Error al crear el ticket en la base de datos');
+            }
+            
+            // Update order status
+            $orderModel->updateOrderStatus($orderId, ORDER_DELIVERED);
+            
+            // Free the table (set to available) since the ticket has been generated
+            if ($order['table_id']) {
+                $tableModel->updateTableStatus($order['table_id'], TABLE_AVAILABLE);
+            }
+            
+            $this->db->commit();
+            error_log("Expired order ticket created successfully with ID: $ticketId");
+            return $ticketId;
+            
+        } catch (Exception $e) {
+            $this->db->rollback();
+            error_log("Expired order ticket creation failed: " . $e->getMessage());
+            throw $e;
+        }
     }
 }
 ?>
