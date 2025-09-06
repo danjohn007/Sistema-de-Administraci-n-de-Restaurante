@@ -172,6 +172,8 @@
 .payment-efectivo { background-color: #198754; color: #fff; }
 .payment-tarjeta { background-color: #0d6efd; color: #fff; }
 .payment-transferencia { background-color: #6f42c1; color: #fff; }
+.payment-intercambio { background-color: #17a2b8; color: #fff; }
+.payment-pendiente_por_cobrar { background-color: #dc3545; color: #fff; }
 </style>
 
 <?php
@@ -179,7 +181,9 @@ function getPaymentMethodText($method) {
     $methods = [
         'efectivo' => 'Efectivo',
         'tarjeta' => 'Tarjeta',
-        'transferencia' => 'Transferencia'
+        'transferencia' => 'Transferencia',
+        'intercambio' => 'Intercambio',
+        'pendiente_por_cobrar' => 'Pendiente por Cobrar'
     ];
     
     return $methods[$method] ?? $method;
