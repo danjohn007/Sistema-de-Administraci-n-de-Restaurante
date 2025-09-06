@@ -89,6 +89,19 @@ class Order extends BaseModel {
         try {
             $this->db->beginTransaction();
             
+            // Validate dish availability before creating order
+            $dishModel = new Dish();
+            $today = date('Y-m-d');
+            $currentDay = date('N');
+            
+            foreach ($items as $item) {
+                if (!$dishModel->isDishAvailable($item['dish_id'], $today, $currentDay)) {
+                    $dish = $dishModel->find($item['dish_id']);
+                    $validityStatus = $dishModel->getValidityStatus($dish);
+                    throw new Exception('El platillo "' . $dish['name'] . '" no está disponible: ' . $validityStatus['message']);
+                }
+            }
+            
             // Create order
             $orderId = $this->create($orderData);
             if (!$orderId) {
@@ -159,6 +172,19 @@ class Order extends BaseModel {
     
     // Helper method for creating orders with items within an existing transaction
     private function createOrderWithItemsInTransaction($orderData, $items) {
+        // Validate dish availability before creating order
+        $dishModel = new Dish();
+        $today = date('Y-m-d');
+        $currentDay = date('N');
+        
+        foreach ($items as $item) {
+            if (!$dishModel->isDishAvailable($item['dish_id'], $today, $currentDay)) {
+                $dish = $dishModel->find($item['dish_id']);
+                $validityStatus = $dishModel->getValidityStatus($dish);
+                throw new Exception('El platillo "' . $dish['name'] . '" no está disponible: ' . $validityStatus['message']);
+            }
+        }
+        
         // Create order
         $orderId = $this->create($orderData);
         if (!$orderId) {

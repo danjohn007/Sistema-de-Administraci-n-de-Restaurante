@@ -89,17 +89,46 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card stat-card <?= (($total_income['total_income'] ?? 0) - $total_expense_amount) >= 0 ? 'success' : 'warning' ?>">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted mb-1">Retiros Totales</h6>
+                        <h3 class="mb-0 text-warning">$<?= number_format($total_withdrawals['total_amount'] ?? 0, 2) ?></h3>
+                        <small class="text-muted"><?= $total_withdrawals['total_count'] ?? 0 ?> retiros</small>
+                    </div>
+                    <div class="text-warning">
+                        <i class="bi bi-cash-coin" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card <?php 
+            $totalWithdrawalAmount = $total_withdrawals['total_amount'] ?? 0;
+            $netProfit = ($total_income['total_income'] ?? 0) - $total_expense_amount - $totalWithdrawalAmount;
+            echo $netProfit >= 0 ? 'success' : 'warning';
+        ?>">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
                         <h6 class="card-title text-muted mb-1">Utilidad Neta</h6>
-                        <h3 class="mb-0 <?= (($total_income['total_income'] ?? 0) - $total_expense_amount) >= 0 ? 'text-success' : 'text-warning' ?>">
-                            $<?= number_format(($total_income['total_income'] ?? 0) - $total_expense_amount, 2) ?>
+                        <h3 class="mb-0 <?php 
+                            $totalWithdrawalAmount = $total_withdrawals['total_amount'] ?? 0;
+                            $netProfit = ($total_income['total_income'] ?? 0) - $total_expense_amount - $totalWithdrawalAmount;
+                            echo $netProfit >= 0 ? 'text-success' : 'text-warning';
+                        ?>">
+                            $<?= number_format($netProfit, 2) ?>
                         </h3>
-                        <small class="text-muted">Ingresos - Gastos</small>
+                        <small class="text-muted">Ingresos - Gastos - Retiros</small>
                     </div>
-                    <div class="<?= (($total_income['total_income'] ?? 0) - $total_expense_amount) >= 0 ? 'text-success' : 'text-warning' ?>">
+                    <div class="<?php 
+                        $totalWithdrawalAmount = $total_withdrawals['total_amount'] ?? 0;
+                        $netProfit = ($total_income['total_income'] ?? 0) - $total_expense_amount - $totalWithdrawalAmount;
+                        echo $netProfit >= 0 ? 'text-success' : 'text-warning';
+                    ?>">
                         <i class="bi bi-calculator" style="font-size: 2rem;"></i>
                     </div>
                 </div>
@@ -116,7 +145,8 @@
                         <h3 class="mb-0 text-info">
                             <?php 
                             $totalIncome = $total_income['total_income'] ?? 0;
-                            $margin = $totalIncome > 0 ? (($totalIncome - $total_expense_amount) / $totalIncome) * 100 : 0;
+                            $totalWithdrawalAmount = $total_withdrawals['total_amount'] ?? 0;
+                            $margin = $totalIncome > 0 ? (($totalIncome - $total_expense_amount - $totalWithdrawalAmount) / $totalIncome) * 100 : 0;
                             echo number_format($margin, 1) . '%';
                             ?>
                         </h3>
