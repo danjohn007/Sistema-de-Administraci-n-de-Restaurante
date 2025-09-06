@@ -113,8 +113,27 @@ class DishesController extends BaseController {
             'name' => trim($_POST['name']),
             'description' => trim($_POST['description']) ?: null,
             'price' => (float)$_POST['price'],
-            'category' => trim($_POST['category']) ?: null
+            'category' => trim($_POST['category']) ?: null,
+            'has_validity' => isset($_POST['has_validity']) ? 1 : 0,
+            'validity_start' => null,
+            'validity_end' => null,
+            'availability_days' => '1234567' // Default: all days
         ];
+        
+        // Handle validity dates if validity is enabled
+        if ($dishData['has_validity']) {
+            if (!empty($_POST['validity_start'])) {
+                $dishData['validity_start'] = $_POST['validity_start'];
+            }
+            if (!empty($_POST['validity_end'])) {
+                $dishData['validity_end'] = $_POST['validity_end'];
+            }
+            
+            // Handle availability days
+            if (isset($_POST['availability_days']) && is_array($_POST['availability_days'])) {
+                $dishData['availability_days'] = implode('', $_POST['availability_days']);
+            }
+        }
         
         try {
             $dishId = $this->dishModel->create($dishData);
@@ -174,8 +193,27 @@ class DishesController extends BaseController {
             'name' => trim($_POST['name']),
             'description' => trim($_POST['description']) ?: null,
             'price' => (float)$_POST['price'],
-            'category' => trim($_POST['category']) ?: null
+            'category' => trim($_POST['category']) ?: null,
+            'has_validity' => isset($_POST['has_validity']) ? 1 : 0,
+            'validity_start' => null,
+            'validity_end' => null,
+            'availability_days' => '1234567' // Default: all days
         ];
+        
+        // Handle validity dates if validity is enabled
+        if ($dishData['has_validity']) {
+            if (!empty($_POST['validity_start'])) {
+                $dishData['validity_start'] = $_POST['validity_start'];
+            }
+            if (!empty($_POST['validity_end'])) {
+                $dishData['validity_end'] = $_POST['validity_end'];
+            }
+            
+            // Handle availability days
+            if (isset($_POST['availability_days']) && is_array($_POST['availability_days'])) {
+                $dishData['availability_days'] = implode('', $_POST['availability_days']);
+            }
+        }
         
         try {
             $success = $this->dishModel->update($id, $dishData);
