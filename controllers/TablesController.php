@@ -2,11 +2,13 @@
 class TablesController extends BaseController {
     private $tableModel;
     private $waiterModel;
+    private $tableZoneModel;
     
     public function __construct() {
         parent::__construct();
         $this->tableModel = new Table();
         $this->waiterModel = new Waiter();
+        $this->tableZoneModel = new TableZone();
     }
     
     public function index() {
@@ -128,8 +130,10 @@ class TablesController extends BaseController {
             $this->processCreate();
         } else {
             $waiters = $this->waiterModel->getWaitersWithUsers();
+            $zones = $this->tableZoneModel->getAllActive();
             $this->view('tables/create', [
-                'waiters' => $waiters
+                'waiters' => $waiters,
+                'zones' => $zones
             ]);
         }
     }
@@ -139,10 +143,12 @@ class TablesController extends BaseController {
         
         if (!empty($errors)) {
             $waiters = $this->waiterModel->getWaitersWithUsers();
+            $zones = $this->tableZoneModel->getAllActive();
             $this->view('tables/create', [
                 'errors' => $errors,
                 'old' => $_POST,
-                'waiters' => $waiters
+                'waiters' => $waiters,
+                'zones' => $zones
             ]);
             return;
         }
@@ -150,6 +156,7 @@ class TablesController extends BaseController {
         $tableData = [
             'number' => (int)$_POST['number'],
             'capacity' => (int)$_POST['capacity'],
+            'zone' => $_POST['zone'] ?? 'Salón',
             'status' => TABLE_AVAILABLE,
             'waiter_id' => !empty($_POST['waiter_id']) ? (int)$_POST['waiter_id'] : null
         ];
@@ -375,6 +382,137 @@ class TablesController extends BaseController {
             if (!$waiter || !$waiter['active']) {
                 $errors['waiter_id'] = 'Mesero no válido';
             }
+        }
+        
+        return $errors;
+    }
+    
+    // ============= ZONE MANAGEMENT =============
+    
+    public function zones() {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        $zones = $this->tableZoneModel->getAllActive();
+        $zoneStats = $this->tableZoneModel->getZoneUsageStats();
+        
+        $this->view('tables/zones', [
+            'zones' => $zones,
+            'zone_stats' => $zoneStats
+        ]);
+    }
+    
+    public function createZone() {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $errors = $this->validateZoneInput($_POST);
+            
+            if (empty($errors)) {
+                $data = [
+                    'name' => trim($_POST['name']),
+                    'description' => trim($_POST['description'] ?? ''),
+                    'color' => $_POST['color'] ?? '#007bff'
+                ];
+                
+                if ($this->tableZoneModel->create($data)) {
+                    $this->redirect('tables/zones', 'success', 'Zona creada correctamente');
+                } else {
+                    $this->view('tables/create_zone', [
+                        'error' => 'Error al crear la zona',
+                        'old' => $_POST
+                    ]);
+                }
+            } else {
+                $this->view('tables/create_zone', [
+                    'errors' => $errors,
+                    'old' => $_POST
+                ]);
+            }
+        } else {
+            $this->view('tables/create_zone');
+        }
+    }
+    
+    public function editZone($id) {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        $zone = $this->tableZoneModel->find($id);
+        if (!$zone) {
+            $this->redirect('tables/zones', 'error', 'Zona no encontrada');
+            return;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $errors = $this->validateZoneInput($_POST, $id);
+            
+            if (empty($errors)) {
+                $data = [
+                    'name' => trim($_POST['name']),
+                    'description' => trim($_POST['description'] ?? ''),
+                    'color' => $_POST['color'] ?? '#007bff'
+                ];
+                
+                if ($this->tableZoneModel->update($id, $data)) {
+                    $this->redirect('tables/zones', 'success', 'Zona actualizada correctamente');
+                } else {
+                    $this->view('tables/edit_zone', [
+                        'zone' => $zone,
+                        'error' => 'Error al actualizar la zona',
+                        'old' => $_POST
+                    ]);
+                }
+            } else {
+                $this->view('tables/edit_zone', [
+                    'zone' => $zone,
+                    'errors' => $errors,
+                    'old' => $_POST
+                ]);
+            }
+        } else {
+            $this->view('tables/edit_zone', [
+                'zone' => $zone
+            ]);
+        }
+    }
+    
+    public function deleteZone($id) {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        $zone = $this->tableZoneModel->find($id);
+        if (!$zone) {
+            $this->redirect('tables/zones', 'error', 'Zona no encontrada');
+            return;
+        }
+        
+        // Check if zone is in use
+        $tablesUsingZone = $this->tableModel->findAll(['zone' => $zone['name'], 'active' => 1]);
+        if (!empty($tablesUsingZone)) {
+            $this->redirect('tables/zones', 'error', 'No se puede eliminar la zona porque está en uso por ' . count($tablesUsingZone) . ' mesa(s)');
+            return;
+        }
+        
+        if ($this->tableZoneModel->update($id, ['active' => 0])) {
+            $this->redirect('tables/zones', 'success', 'Zona eliminada correctamente');
+        } else {
+            $this->redirect('tables/zones', 'error', 'Error al eliminar la zona');
+        }
+    }
+    
+    private function validateZoneInput($data, $excludeId = null) {
+        $errors = [];
+        
+        // Name validation
+        if (empty($data['name'])) {
+            $errors['name'] = 'El nombre de la zona es requerido';
+        } elseif (strlen($data['name']) > 50) {
+            $errors['name'] = 'El nombre no puede tener más de 50 caracteres';
+        } elseif ($this->tableZoneModel->nameExists($data['name'], $excludeId)) {
+            $errors['name'] = 'Ya existe una zona con este nombre';
+        }
+        
+        // Color validation
+        if (!empty($data['color']) && !preg_match('/^#[a-fA-F0-9]{6}$/', $data['color'])) {
+            $errors['color'] = 'El color debe ser un código hexadecimal válido';
         }
         
         return $errors;
