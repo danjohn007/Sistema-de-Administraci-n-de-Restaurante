@@ -45,6 +45,10 @@ class FinancialController extends BaseController {
             $totalExpenseAmount += (float)$expense['total_amount'];
         }
         
+        // Get withdrawal totals for the date range
+        $totalWithdrawals = $this->cashWithdrawalModel->getTotalWithdrawals($dateFrom, $dateTo, $branchId);
+        $withdrawalsByDate = $this->cashWithdrawalModel->getWithdrawalsByDateRange($dateFrom, $dateTo, $branchId);
+        
         // Estadísticas de sucursales si es admin
         $branches = [];
         if ($user['role'] === ROLE_ADMIN) {
@@ -61,6 +65,8 @@ class FinancialController extends BaseController {
             'income_by_payment_method' => $incomeByPaymentMethod,
             'income_vs_expenses' => $incomeVsExpenses,
             'total_expense_amount' => $totalExpenseAmount,
+            'total_withdrawals' => $totalWithdrawals,
+            'withdrawals_by_date' => $withdrawalsByDate,
             'branches' => $branches,
             'date_from' => $dateFrom,
             'date_to' => $dateTo,

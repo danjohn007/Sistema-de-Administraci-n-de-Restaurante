@@ -363,6 +363,30 @@
         </div>
     </div>
 
+    <!-- Expired Orders Alert for Cashier (if any) -->
+    <?php if (isset($expired_orders_count) && $expired_orders_count > 0): ?>
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-danger border-0 shadow-sm" role="alert">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 2rem;"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="alert-heading mb-1">¡Atención! Pedidos Vencidos</h5>
+                        <p class="mb-2">
+                            Hay <strong><?= $expired_orders_count ?></strong> pedidos de días anteriores que aún no han sido entregados y requieren atención inmediata.
+                        </p>
+                        <a href="<?= BASE_URL ?>/orders/expiredOrders" class="btn btn-danger btn-sm">
+                            <i class="bi bi-arrow-right-circle"></i> Ver Pedidos Vencidos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
 <?php endif; ?>
 
 <!-- Quick Actions -->

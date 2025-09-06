@@ -629,7 +629,7 @@ class OrdersController extends BaseController {
         $user = $this->getCurrentUser();
         $filters = [];
         
-        // Filter by waiter for non-admin users
+        // Filter by waiter for waiter users only
         if ($user['role'] === ROLE_WAITER) {
             $waiter = $this->waiterModel->findBy('user_id', $user['id']);
             if ($waiter) {
@@ -639,6 +639,7 @@ class OrdersController extends BaseController {
                 $orders = [];
             }
         }
+        // Admin and cashier can see all expired orders
         
         if (!isset($orders)) {
             $orders = $this->orderModel->getExpiredOrders($filters);

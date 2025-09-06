@@ -126,11 +126,15 @@ class DashboardController extends BaseController {
         // Orders with bill requested
         $billRequestedTables = $this->tableModel->getTablesByStatus(TABLE_BILL_REQUESTED);
         
+        // Expired orders count (cashier can see all expired orders)
+        $expiredOrdersCount = $this->orderModel->getExpiredOrdersCount();
+        
         return [
             'today_tickets' => $todayTickets,
             'sales_report' => $salesReport,
             'ready_orders' => $readyOrders,
-            'bill_requested_tables' => $billRequestedTables
+            'bill_requested_tables' => $billRequestedTables,
+            'expired_orders_count' => $expiredOrdersCount
         ];
     }
     
