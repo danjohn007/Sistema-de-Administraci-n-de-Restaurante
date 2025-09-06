@@ -1,6 +1,6 @@
 <?php
 // Application configuration
-define('APP_NAME', 'Sistema de Administración de Restaurante');
+define('APP_NAME', 'Sistema de Administración La Troje');
 define('APP_VERSION', '1.0.0');
 
 // Database configuration
