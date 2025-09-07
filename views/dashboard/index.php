@@ -431,6 +431,26 @@
                                 <i class="bi bi-person-plus"></i><br>Nuevo Usuario
                             </a>
                         </div>
+                        <div class="col-md-2 mb-2">
+                            <a href="<?= BASE_URL ?>/financial" class="btn btn-outline-danger w-100">
+                                <i class="bi bi-graph-up"></i><br>Dashboard Financiero
+                            </a>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <a href="<?= BASE_URL ?>/best_diners" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-star-fill"></i><br>Mejores Comensales
+                            </a>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <a href="<?= BASE_URL ?>/best_diners/bySpending" class="btn btn-outline-success w-100">
+                                <i class="bi bi-currency-dollar"></i><br>Top por Consumo
+                            </a>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <a href="<?= BASE_URL ?>/best_diners/byVisits" class="btn btn-outline-info w-100">
+                                <i class="bi bi-people-fill"></i><br>Top por Visitas
+                            </a>
+                        </div>
                     <?php elseif ($user['role'] === ROLE_WAITER): ?>
                         <div class="col-md-3 mb-2">
                             <a href="<?= BASE_URL ?>/orders/create" class="btn btn-outline-primary w-100">

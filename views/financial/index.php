@@ -376,7 +376,7 @@
 </div>
 
 <!-- Acciones rápidas -->
-<div class="row">
+<div class="row mb-4">
     <div class="col-md-4">
         <div class="card text-center">
             <div class="card-body">
@@ -412,6 +412,74 @@
                 <a href="<?= BASE_URL ?>/financial/createClosure" class="btn btn-success">
                     <i class="bi bi-plus"></i> Nuevo Corte
                 </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Accesos a Mejores Comensales -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-star-fill"></i> Análisis de Clientes
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card text-center border-primary">
+                            <div class="card-body">
+                                <i class="bi bi-star-fill display-4 text-primary mb-3"></i>
+                                <h6 class="card-title">Mejores Comensales</h6>
+                                <p class="card-text small">Vista general de los mejores clientes</p>
+                                <a href="<?= BASE_URL ?>/best_diners" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye"></i> Ver Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card text-center border-success">
+                            <div class="card-body">
+                                <i class="bi bi-currency-dollar display-4 text-success mb-3"></i>
+                                <h6 class="card-title">Top por Consumo</h6>
+                                <p class="card-text small">Clientes que más han gastado</p>
+                                <a href="<?= BASE_URL ?>/best_diners/bySpending" class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-graph-up"></i> Ver Lista
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card text-center border-info">
+                            <div class="card-body">
+                                <i class="bi bi-people-fill display-4 text-info mb-3"></i>
+                                <h6 class="card-title">Top por Visitas</h6>
+                                <p class="card-text small">Clientes más frecuentes</p>
+                                <a href="<?= BASE_URL ?>/best_diners/byVisits" class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-calendar-check"></i> Ver Lista
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card text-center border-warning">
+                            <div class="card-body">
+                                <i class="bi bi-graph-up-arrow display-4 text-warning mb-3"></i>
+                                <h6 class="card-title">Reporte Completo</h6>
+                                <p class="card-text small">Análisis detallado de clientes</p>
+                                <a href="<?= BASE_URL ?>/best_diners/report" class="btn btn-outline-warning btn-sm">
+                                    <i class="bi bi-file-earmark-bar-graph"></i> Ver Reporte
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
