@@ -108,6 +108,10 @@
                             <i class="bi bi-star-fill"></i> Clientes
                         </a>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/customers">
+                                <i class="bi bi-people"></i> Gestión de Clientes
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="<?= BASE_URL ?>/best_diners">
                                 <i class="bi bi-trophy"></i> Mejores Comensales
                             </a></li>
