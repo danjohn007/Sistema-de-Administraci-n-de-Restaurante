@@ -80,7 +80,12 @@
                     <tr>
                         <td><strong>Cumpleaños:</strong></td>
                         <td>
-                            <?php if ($customer['birthday']): ?>
+                            <?php 
+                            if (!empty($customer['birthday_day']) && !empty($customer['birthday_month'])): 
+                                $birthdayFormatted = sprintf('%02d/%02d', $customer['birthday_day'], $customer['birthday_month']);
+                            ?>
+                                <i class="bi bi-cake text-warning"></i> <?= htmlspecialchars($birthdayFormatted) ?>
+                            <?php elseif (!empty($customer['birthday'])): ?>
                                 <i class="bi bi-cake text-warning"></i> <?= htmlspecialchars($customer['birthday']) ?>
                             <?php else: ?>
                                 <span class="text-muted">No registrado</span>
