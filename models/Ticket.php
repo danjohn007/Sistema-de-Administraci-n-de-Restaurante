@@ -78,8 +78,8 @@ class Ticket extends BaseModel {
                 throw new Exception('Error al crear el ticket en la base de datos');
             }
             
-            // Update order status
-            $orderModel->updateOrderStatus($orderId, ORDER_DELIVERED);
+            // Update order status and customer stats
+            $orderModel->updateOrderStatusAndCustomerStats($orderId, ORDER_DELIVERED);
             
             // Update customer statistics if order has a customer
             if ($order['customer_id']) {
@@ -574,8 +574,8 @@ class Ticket extends BaseModel {
                 throw new Exception('Error al crear el ticket en la base de datos');
             }
             
-            // Update order status
-            $orderModel->updateOrderStatus($orderId, ORDER_DELIVERED);
+            // Update order status and customer stats
+            $orderModel->updateOrderStatusAndCustomerStats($orderId, ORDER_DELIVERED);
             
             // Update customer statistics if order has a customer
             if ($order['customer_id']) {
