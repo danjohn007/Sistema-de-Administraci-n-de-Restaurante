@@ -84,6 +84,63 @@ class FinancialController extends BaseController {
         $this->view('financial/index', $data);
     }
     
+    // ============= COLLECTION MANAGEMENT (COBRANZA) =============
+    
+    public function collections() {
+        $this->requireRole([ROLE_ADMIN, ROLE_CASHIER]);
+        
+        $pendingTickets = $this->ticketModel->getPendingPayments();
+        
+        $data = [
+            'pending_tickets' => $pendingTickets
+        ];
+        
+        $this->view('financial/collections', $data);
+    }
+    
+    public function updatePaymentStatus($ticketId) {
+        $this->requireRole([ROLE_ADMIN, ROLE_CASHIER]);
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->setFlashMessage('error', 'Método no permitido');
+            $this->redirect('financial/collections');
+            return;
+        }
+        
+        $paymentMethod = $_POST['payment_method'] ?? '';
+        
+        if (!in_array($paymentMethod, ['efectivo', 'tarjeta', 'transferencia', 'intercambio'])) {
+            $this->setFlashMessage('error', 'Método de pago inválido');
+            $this->redirect('financial/collections');
+            return;
+        }
+        
+        if ($this->ticketModel->updatePaymentMethod($ticketId, $paymentMethod)) {
+            $this->setFlashMessage('success', 'Estado de pago actualizado correctamente');
+        } else {
+            $this->setFlashMessage('error', 'Error al actualizar el estado de pago');
+        }
+        
+        $this->redirect('financial/collections');
+    }
+    
+    public function intercambios() {
+        $this->requireRole([ROLE_ADMIN, ROLE_CASHIER]);
+        
+        $dateFrom = $_GET['date_from'] ?? date('Y-m-01');
+        $dateTo = $_GET['date_to'] ?? date('Y-m-d');
+        
+        $intercambioTickets = $this->ticketModel->getTicketsByPaymentMethod('intercambio', $dateFrom, $dateTo);
+        
+        $data = [
+            'tickets' => $intercambioTickets,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo
+        ];
+        
+        $this->view('financial/intercambios', $data);
+    }
+
     // ============= GESTIÓN DE GASTOS =============
     
     public function expenses() {
