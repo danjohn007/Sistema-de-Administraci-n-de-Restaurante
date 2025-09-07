@@ -62,11 +62,23 @@
                         
                         <div class="col-md-6 mb-3">
                             <label for="birthday" class="form-label">Cumpleaños</label>
+                            <?php 
+                            // Reconstruct birthday from day and month columns
+                            $birthdayValue = '';
+                            if (isset($_POST['birthday'])) {
+                                $birthdayValue = $_POST['birthday'];
+                            } elseif (!empty($customer['birthday_day']) && !empty($customer['birthday_month'])) {
+                                $birthdayValue = sprintf('%02d/%02d', $customer['birthday_day'], $customer['birthday_month']);
+                            } elseif (!empty($customer['birthday'])) {
+                                // Fallback to old birthday field if it exists
+                                $birthdayValue = $customer['birthday'];
+                            }
+                            ?>
                             <input type="text" 
                                    class="form-control" 
                                    id="birthday" 
                                    name="birthday" 
-                                   value="<?= htmlspecialchars($_POST['birthday'] ?? $customer['birthday'] ?? '') ?>"
+                                   value="<?= htmlspecialchars($birthdayValue) ?>"
                                    placeholder="DD/MM (Ej: 15/03)"
                                    pattern="[0-3][0-9]/[0-1][0-9]">
                             <div class="form-text">Formato: DD/MM (Campo opcional)</div>

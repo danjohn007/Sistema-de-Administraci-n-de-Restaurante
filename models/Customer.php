@@ -31,20 +31,20 @@ class Customer extends BaseModel {
     }
     
     public function getBirthdayCustomers($month = null, $day = null) {
-        $query = "SELECT * FROM customers WHERE birthday IS NOT NULL";
+        $query = "SELECT * FROM customers WHERE (birthday_day IS NOT NULL AND birthday_month IS NOT NULL)";
         $params = [];
         
         if ($month) {
-            $query .= " AND MONTH(birthday) = ?";
+            $query .= " AND birthday_month = ?";
             $params[] = $month;
         }
         
         if ($day) {
-            $query .= " AND DAY(birthday) = ?";
+            $query .= " AND birthday_day = ?";
             $params[] = $day;
         }
         
-        $query .= " ORDER BY MONTH(birthday), DAY(birthday)";
+        $query .= " ORDER BY birthday_month, birthday_day";
         
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
@@ -108,6 +108,74 @@ class Customer extends BaseModel {
         
         // Create new customer
         return $this->create($customerData);
+    }
+    
+    /**
+     * Parse birthday in DD/MM format and return array with day and month
+     * @param string $birthday in DD/MM format (e.g., "15/03")
+     * @return array|null ['day' => int, 'month' => int] or null if invalid
+     */
+    public function parseBirthday($birthday) {
+        if (empty($birthday)) {
+            return null;
+        }
+        
+        // Validate DD/MM format
+        if (!preg_match('/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])$/', $birthday)) {
+            return null;
+        }
+        
+        list($day, $month) = explode('/', $birthday);
+        $day = intval($day);
+        $month = intval($month);
+        
+        // Validate that it's a valid date combination
+        if (!checkdate($month, $day, 2000)) {
+            return null;
+        }
+        
+        return ['day' => $day, 'month' => $month];
+    }
+    
+    /**
+     * Override create method to handle birthday parsing
+     */
+    public function create($data) {
+        // Parse birthday if provided
+        if (isset($data['birthday']) && !empty($data['birthday'])) {
+            $birthdayData = $this->parseBirthday($data['birthday']);
+            if ($birthdayData) {
+                $data['birthday_day'] = $birthdayData['day'];
+                $data['birthday_month'] = $birthdayData['month'];
+            }
+            // Remove the original birthday field since we're using separate columns
+            unset($data['birthday']);
+        }
+        
+        return parent::create($data);
+    }
+    
+    /**
+     * Override update method to handle birthday parsing
+     */
+    public function update($id, $data) {
+        // Parse birthday if provided
+        if (isset($data['birthday']) && !empty($data['birthday'])) {
+            $birthdayData = $this->parseBirthday($data['birthday']);
+            if ($birthdayData) {
+                $data['birthday_day'] = $birthdayData['day'];
+                $data['birthday_month'] = $birthdayData['month'];
+            }
+            // Remove the original birthday field since we're using separate columns
+            unset($data['birthday']);
+        } else if (isset($data['birthday']) && empty($data['birthday'])) {
+            // If birthday is empty, clear the day and month fields
+            $data['birthday_day'] = null;
+            $data['birthday_month'] = null;
+            unset($data['birthday']);
+        }
+        
+        return parent::update($id, $data);
     }
     
     public function getAllWithPagination($limit = 20, $offset = 0) {

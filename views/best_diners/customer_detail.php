@@ -76,7 +76,17 @@
                         <td><?= htmlspecialchars($customer['email']) ?></td>
                     </tr>
                     <?php endif; ?>
-                    <?php if ($customer['birthday']): ?>
+                    <?php 
+                    if (!empty($customer['birthday_day']) && !empty($customer['birthday_month'])): 
+                        $birthdayFormatted = sprintf('%02d/%02d', $customer['birthday_day'], $customer['birthday_month']);
+                    ?>
+                    <tr>
+                        <td><strong>Cumpleaños:</strong></td>
+                        <td>
+                            <i class="bi bi-cake text-warning"></i> <?= htmlspecialchars($birthdayFormatted) ?>
+                        </td>
+                    </tr>
+                    <?php elseif (!empty($customer['birthday'])): ?>
                     <tr>
                         <td><strong>Cumpleaños:</strong></td>
                         <td>
