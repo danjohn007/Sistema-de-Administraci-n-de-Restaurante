@@ -113,7 +113,14 @@
                         </td>
                         <td>
                             <strong><?= htmlspecialchars($customer['name']) ?></strong>
-                            <?php if ($customer['birthday']): ?>
+                            <?php 
+                            if (!empty($customer['birthday_day']) && !empty($customer['birthday_month'])): 
+                                $birthdayFormatted = sprintf('%02d/%02d', $customer['birthday_day'], $customer['birthday_month']);
+                            ?>
+                                <br><small class="text-muted">
+                                    <i class="bi bi-cake"></i> <?= htmlspecialchars($birthdayFormatted) ?>
+                                </small>
+                            <?php elseif (!empty($customer['birthday'])): ?>
                                 <br><small class="text-muted">
                                     <i class="bi bi-cake"></i> <?= htmlspecialchars($customer['birthday']) ?>
                                 </small>

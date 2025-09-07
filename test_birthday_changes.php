@@ -119,7 +119,10 @@ $filesToCheck = [
     'models/Customer.php',
     'views/customers/edit.php',
     'views/customers/show.php',
-    'views/customers/index.php'
+    'views/customers/index.php',
+    'views/best_diners/customer_detail.php',
+    'views/best_diners/by_spending.php',
+    'views/best_diners/by_visits.php'
 ];
 
 foreach ($filesToCheck as $file) {
