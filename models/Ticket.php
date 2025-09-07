@@ -81,6 +81,12 @@ class Ticket extends BaseModel {
             // Update order status
             $orderModel->updateOrderStatus($orderId, ORDER_DELIVERED);
             
+            // Update customer statistics if order has a customer
+            if ($order['customer_id']) {
+                $customerModel = new Customer();
+                $customerModel->updateStats($order['customer_id'], $order['total']);
+            }
+            
             // Free the table (set to available) since the ticket has been generated
             $tableModel = new Table();
             $tableModel->updateTableStatus($order['table_id'], TABLE_AVAILABLE);
@@ -191,9 +197,15 @@ class Ticket extends BaseModel {
                 throw new Exception('Error al crear el ticket en la base de datos');
             }
             
-            // Update all order statuses to delivered
+            // Update all order statuses to delivered and customer stats
+            $customerModel = new Customer();
             foreach ($orders as $order) {
                 $orderModel->updateOrderStatus($order['id'], ORDER_DELIVERED);
+                
+                // Update customer statistics if order has a customer
+                if ($order['customer_id']) {
+                    $customerModel->updateStats($order['customer_id'], $order['total']);
+                }
             }
             
             // Free the table (set to available) since the ticket has been generated
@@ -564,6 +576,12 @@ class Ticket extends BaseModel {
             
             // Update order status
             $orderModel->updateOrderStatus($orderId, ORDER_DELIVERED);
+            
+            // Update customer statistics if order has a customer
+            if ($order['customer_id']) {
+                $customerModel = new Customer();
+                $customerModel->updateStats($order['customer_id'], $order['total']);
+            }
             
             // Free the table (set to available) since the ticket has been generated
             if ($order['table_id']) {
