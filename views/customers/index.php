@@ -6,8 +6,14 @@
         <a href="<?= BASE_URL ?>/customers/create" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Nuevo Cliente
         </a>
-        <a href="<?= BASE_URL ?>/best_diners" class="btn btn-outline-secondary">
-            <i class="bi bi-star-fill"></i> Mejores Comensales
+        <a href="<?= BASE_URL ?>/best_diners/report" class="btn btn-outline-info">
+            <i class="bi bi-file-earmark-bar-graph"></i> Mejores Comensales - Reporte Completo
+        </a>
+        <a href="<?= BASE_URL ?>/best_diners/bySpending" class="btn btn-outline-success">
+            <i class="bi bi-currency-dollar"></i> Top por Consumo
+        </a>
+        <a href="<?= BASE_URL ?>/best_diners/byVisits" class="btn btn-outline-warning">
+            <i class="bi bi-people-fill"></i> Top por Visitas
         </a>
     </div>
 </div>
