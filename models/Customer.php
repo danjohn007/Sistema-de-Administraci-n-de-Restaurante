@@ -2,6 +2,10 @@
 class Customer extends BaseModel {
     protected $table = 'customers';
     
+    public function findById($id) {
+        return $this->find($id);
+    }
+    
     public function getTopCustomersByVisits($limit = 10) {
         $query = "SELECT * FROM customers 
                   WHERE total_visits > 0 
