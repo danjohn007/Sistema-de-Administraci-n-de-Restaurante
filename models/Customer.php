@@ -105,4 +105,26 @@ class Customer extends BaseModel {
         // Create new customer
         return $this->create($customerData);
     }
+    
+    public function getAllWithPagination($limit = 20, $offset = 0) {
+        $query = "SELECT * FROM customers 
+                  WHERE active = 1 
+                  ORDER BY total_visits DESC, total_spent DESC, name ASC 
+                  LIMIT ? OFFSET ?";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$limit, $offset]);
+        
+        return $stmt->fetchAll();
+    }
+    
+    public function getTotalCount() {
+        $query = "SELECT COUNT(*) as count FROM customers WHERE active = 1";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+        
+        $result = $stmt->fetch();
+        return $result['count'];
+    }
 }
