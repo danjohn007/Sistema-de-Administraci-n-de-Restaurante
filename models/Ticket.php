@@ -234,19 +234,18 @@ class Ticket extends BaseModel {
             // Get all orders for this table that were delivered at the same time as this ticket
             $orderModel = new Order();
             
-            // Get all order items from orders that were processed together
-            // This handles both single orders and multiple orders from the same table
+            // Get order items from the specific order linked to this ticket
+            // For tickets created from multiple orders, this will show the main order's items
+            // Note: This is a simplified approach that shows items from the primary order only
             $itemsQuery = "SELECT oi.*, d.name as dish_name, d.category, o.id as order_id
                           FROM order_items oi
                           JOIN dishes d ON oi.dish_id = d.id
                           JOIN orders o ON oi.order_id = o.id
-                          WHERE o.table_id = ? 
-                          AND o.status = ?
-                          AND DATE(o.updated_at) = DATE(?)
-                          ORDER BY o.id ASC, oi.created_at ASC";
+                          WHERE o.id = ?
+                          ORDER BY oi.created_at ASC";
             
             $stmt = $this->db->prepare($itemsQuery);
-            $stmt->execute([$ticket['table_id'], ORDER_DELIVERED, $ticket['created_at']]);
+            $stmt->execute([$ticket['order_id']]);
             
             $ticket['items'] = $stmt->fetchAll();
             
@@ -472,7 +471,7 @@ class Ticket extends BaseModel {
     
     public function getPendingPayments() {
         $query = "SELECT t.*, 
-                         tn.table_number,
+                         tn.number as table_number,
                          u.name as cashier_name,
                          w.name as waiter_name,
                          w.employee_code

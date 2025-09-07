@@ -300,6 +300,8 @@ foreach ($salesData as $row) {
 .payment-efectivo { background-color: #198754; color: #fff; }
 .payment-tarjeta { background-color: #0d6efd; color: #fff; }
 .payment-transferencia { background-color: #6f42c1; color: #fff; }
+.payment-intercambio { background-color: #17a2b8; color: #fff; }
+.payment-pendiente_por_cobrar { background-color: #dc3545; color: #fff; }
 
 .border-left-primary { border-left: 4px solid #0d6efd !important; }
 .border-left-success { border-left: 4px solid #198754 !important; }
@@ -337,7 +339,9 @@ function getPaymentMethodText($method) {
     $methods = [
         'efectivo' => 'Efectivo',
         'tarjeta' => 'Tarjeta',
-        'transferencia' => 'Transferencia'
+        'transferencia' => 'Transferencia',
+        'intercambio' => 'Intercambio',
+        'pendiente_por_cobrar' => 'Pendiente por Cobrar'
     ];
     
     return $methods[$method] ?? $method;
@@ -347,7 +351,9 @@ function getPaymentMethodIcon($method) {
     $icons = [
         'efectivo' => 'cash',
         'tarjeta' => 'credit-card',
-        'transferencia' => 'bank'
+        'transferencia' => 'bank',
+        'intercambio' => 'arrow-left-right',
+        'pendiente_por_cobrar' => 'clock-history'
     ];
     
     return $icons[$method] ?? 'cash';
@@ -357,7 +363,9 @@ function getPaymentMethodColor($method) {
     $colors = [
         'efectivo' => 'success',
         'tarjeta' => 'primary',
-        'transferencia' => 'warning'
+        'transferencia' => 'warning',
+        'intercambio' => 'info',
+        'pendiente_por_cobrar' => 'danger'
     ];
     
     return $colors[$method] ?? 'secondary';
