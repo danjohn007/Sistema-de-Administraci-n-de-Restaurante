@@ -78,8 +78,8 @@ class Ticket extends BaseModel {
                 throw new Exception('Error al crear el ticket en la base de datos');
             }
             
-            // Update order status
-            $orderModel->updateOrderStatus($orderId, ORDER_DELIVERED);
+            // Update order status and customer statistics
+            $orderModel->updateOrderStatusAndCustomerStats($orderId, ORDER_DELIVERED);
             
             // Free the table (set to available) since the ticket has been generated
             $tableModel = new Table();
@@ -191,9 +191,9 @@ class Ticket extends BaseModel {
                 throw new Exception('Error al crear el ticket en la base de datos');
             }
             
-            // Update all order statuses to delivered
+            // Update all order statuses to delivered and customer statistics
             foreach ($orders as $order) {
-                $orderModel->updateOrderStatus($order['id'], ORDER_DELIVERED);
+                $orderModel->updateOrderStatusAndCustomerStats($order['id'], ORDER_DELIVERED);
             }
             
             // Free the table (set to available) since the ticket has been generated
@@ -562,8 +562,8 @@ class Ticket extends BaseModel {
                 throw new Exception('Error al crear el ticket en la base de datos');
             }
             
-            // Update order status
-            $orderModel->updateOrderStatus($orderId, ORDER_DELIVERED);
+            // Update order status and customer statistics
+            $orderModel->updateOrderStatusAndCustomerStats($orderId, ORDER_DELIVERED);
             
             // Free the table (set to available) since the ticket has been generated
             if ($order['table_id']) {
