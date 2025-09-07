@@ -108,38 +108,11 @@ class BestDinersController extends BaseController {
     }
     
     private function getMonthlyCustomerStats($startDate, $endDate) {
-        $query = "SELECT 
-                    DATE_FORMAT(o.created_at, '%Y-%m') as month,
-                    COUNT(DISTINCT o.customer_id) as unique_customers,
-                    COUNT(o.id) as total_orders,
-                    SUM(o.total) as total_revenue,
-                    AVG(o.total) as avg_order_value
-                  FROM orders o 
-                  WHERE o.customer_id IS NOT NULL 
-                    AND DATE(o.created_at) BETWEEN ? AND ?
-                    AND o.status = ?
-                  GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
-                  ORDER BY month DESC";
-        
-        $stmt = $this->customerModel->db->prepare($query);
-        $stmt->execute([$startDate, $endDate, ORDER_DELIVERED]);
-        
-        return $stmt->fetchAll();
+        return $this->customerModel->getMonthlyCustomerStats($startDate, $endDate);
     }
     
     private function getCustomerGrowthData() {
-        $query = "SELECT 
-                    DATE_FORMAT(created_at, '%Y-%m') as month,
-                    COUNT(*) as new_customers
-                  FROM customers 
-                  WHERE created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-                  GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-                  ORDER BY month ASC";
-        
-        $stmt = $this->customerModel->db->prepare($query);
-        $stmt->execute();
-        
-        return $stmt->fetchAll();
+        return $this->customerModel->getCustomerGrowthData();
     }
     
     public function customerDetail($id) {
