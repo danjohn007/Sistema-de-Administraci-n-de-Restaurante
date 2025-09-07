@@ -30,7 +30,7 @@ $url = filter_var($url, FILTER_SANITIZE_URL);
 $urlParts = $url ? explode('/', $url) : ['auth'];
 
 // Get controller, method and parameters
-$controllerName = !empty($urlParts[0]) ? ucfirst($urlParts[0]) . 'Controller' : 'AuthController';
+$controllerName = !empty($urlParts[0]) ? str_replace(' ', '', ucwords(str_replace('_', ' ', $urlParts[0]))) . 'Controller' : 'AuthController';
 $methodName = !empty($urlParts[1]) ? $urlParts[1] : 'index';
 $params = array_slice($urlParts, 2);
 
