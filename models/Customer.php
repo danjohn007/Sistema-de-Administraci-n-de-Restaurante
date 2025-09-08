@@ -210,12 +210,12 @@ class Customer extends BaseModel {
                   FROM orders o 
                   WHERE o.customer_id IS NOT NULL 
                     AND DATE(o.created_at) BETWEEN ? AND ?
-                    AND o.status = ?
+                    AND o.status = 'entregado'
                   GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
                   ORDER BY month DESC";
         
         $stmt = $this->db->prepare($query);
-        $stmt->execute([$startDate, $endDate, ORDER_DELIVERED]);
+        $stmt->execute([$startDate, $endDate]);
         
         return $stmt->fetchAll();
     }

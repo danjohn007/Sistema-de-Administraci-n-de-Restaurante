@@ -364,7 +364,8 @@ class Ticket extends BaseModel {
                     SUM(tax) as total_tax,
                     SUM(total) as total_income
                   FROM {$this->table} 
-                  WHERE DATE(created_at) BETWEEN ? AND ?";
+                  WHERE DATE(created_at) BETWEEN ? AND ?
+                    AND payment_method != 'pendiente_por_cobrar'";
         
         $stmt = $this->db->prepare($query);
         $stmt->execute([$dateFrom, $dateTo]);
@@ -389,6 +390,7 @@ class Ticket extends BaseModel {
                     SUM(total) as total_income
                   FROM {$this->table} 
                   WHERE DATE(created_at) BETWEEN ? AND ?
+                    AND payment_method != 'pendiente_por_cobrar'
                   GROUP BY DATE(created_at)
                   ORDER BY DATE(created_at) ASC";
         
@@ -631,6 +633,30 @@ class Ticket extends BaseModel {
         $stmt = $this->db->prepare($query);
         $stmt->execute([$dateFrom, $dateTo]);
         return $stmt->fetch();
+    }
+    
+    public function getTicketsByPaymentMethod($paymentMethod, $dateFrom = null, $dateTo = null) {
+        $dateFrom = $dateFrom ?: date('Y-m-01');
+        $dateTo = $dateTo ?: date('Y-m-d');
+        
+        $query = "SELECT t.*, 
+                         o.table_id,
+                         tn.number as table_number,
+                         u.name as cashier_name,
+                         w.name as waiter_name,
+                         w.employee_code
+                  FROM tickets t
+                  LEFT JOIN orders o ON t.order_id = o.id
+                  LEFT JOIN tables tn ON o.table_id = tn.id
+                  LEFT JOIN users u ON t.cashier_id = u.id
+                  LEFT JOIN waiters w ON o.waiter_id = w.id
+                  WHERE t.payment_method = ?
+                    AND DATE(t.created_at) BETWEEN ? AND ?
+                  ORDER BY t.created_at DESC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$paymentMethod, $dateFrom, $dateTo]);
+        return $stmt->fetchAll();
     }
     
     public function getPendingPaymentTotal($dateFrom = null, $dateTo = null) {

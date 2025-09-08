@@ -12,6 +12,9 @@
         <a href="<?= BASE_URL ?>/financial/closures" class="btn btn-outline-success">
             <i class="bi bi-journal-check"></i> Corte de Caja
         </a>
+        <a href="<?= BASE_URL ?>/financial/collections" class="btn btn-outline-danger">
+            <i class="bi bi-cash-coin"></i> Cobranza
+        </a>
     </div>
 </div>
 
@@ -164,41 +167,49 @@
 <!-- New Payment Method Statistics -->
 <div class="row mb-4">
     <div class="col-md-4 mb-3">
-        <div class="card stat-card warning">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title text-muted mb-1">Total Intercambios</h6>
-                        <h3 class="mb-0 text-warning">
-                            $<?= number_format($intercambio_stats['total_amount'] ?? 0, 2) ?>
-                        </h3>
-                        <small class="text-muted"><?= $intercambio_stats['count'] ?? 0 ?> transacciones</small>
-                    </div>
-                    <div class="text-warning">
-                        <i class="bi bi-arrow-left-right" style="font-size: 2rem;"></i>
+        <a href="<?= BASE_URL ?>/financial/intercambios" class="text-decoration-none">
+            <div class="card stat-card warning" style="cursor: pointer; transition: transform 0.2s;" 
+                 onmouseover="this.style.transform='translateY(-2px)'" 
+                 onmouseout="this.style.transform='translateY(0)'">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted mb-1">Total Intercambios</h6>
+                            <h3 class="mb-0 text-warning">
+                                $<?= number_format($intercambio_stats['total_amount'] ?? 0, 2) ?>
+                            </h3>
+                            <small class="text-muted"><?= $intercambio_stats['count'] ?? 0 ?> transacciones</small>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-arrow-left-right" style="font-size: 2rem;"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
     <div class="col-md-4 mb-3">
-        <div class="card stat-card danger">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title text-muted mb-1">Pendiente por Cobrar</h6>
-                        <h3 class="mb-0 text-danger">
-                            $<?= number_format($pending_payment_stats['total_amount'] ?? 0, 2) ?>
-                        </h3>
-                        <small class="text-muted"><?= $pending_payment_stats['count'] ?? 0 ?> cuentas pendientes</small>
-                    </div>
-                    <div class="text-danger">
-                        <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+        <a href="<?= BASE_URL ?>/financial/collections" class="text-decoration-none">
+            <div class="card stat-card danger" style="cursor: pointer; transition: transform 0.2s;" 
+                 onmouseover="this.style.transform='translateY(-2px)'" 
+                 onmouseout="this.style.transform='translateY(0)'">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted mb-1">Pendiente por Cobrar</h6>
+                            <h3 class="mb-0 text-danger">
+                                $<?= number_format($pending_payment_stats['total_amount'] ?? 0, 2) ?>
+                            </h3>
+                            <small class="text-muted"><?= $pending_payment_stats['count'] ?? 0 ?> cuentas pendientes</small>
+                        </div>
+                        <div class="text-danger">
+                            <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
     <div class="col-md-4 mb-3">

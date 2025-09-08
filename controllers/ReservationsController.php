@@ -86,6 +86,18 @@ class ReservationsController extends BaseController {
             $waiterModel = new Waiter();
             $waiters = $waiterModel->getWaitersWithUsers();
             
+            // Format customer birthday for display if it exists
+            if (isset($reservation['customer_birthday']) && !empty($reservation['customer_birthday'])) {
+                // Check if it's already in DD/MM format
+                if (!preg_match('/^\d{2}\/\d{2}$/', $reservation['customer_birthday'])) {
+                    // If it's a date, try to convert it to DD/MM
+                    $birthday = $reservation['customer_birthday'];
+                    if (strtotime($birthday)) {
+                        $reservation['customer_birthday'] = date('d/m', strtotime($birthday));
+                    }
+                }
+            }
+            
             $this->view('reservations/edit', [
                 'reservation' => $reservation,
                 'tables' => $tables,

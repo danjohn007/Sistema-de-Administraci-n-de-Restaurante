@@ -108,11 +108,21 @@ class BestDinersController extends BaseController {
     }
     
     private function getMonthlyCustomerStats($startDate, $endDate) {
-        return $this->customerModel->getMonthlyCustomerStats($startDate, $endDate);
+        try {
+            return $this->customerModel->getMonthlyCustomerStats($startDate, $endDate);
+        } catch (Exception $e) {
+            error_log("BestDinersController::getMonthlyCustomerStats - Error: " . $e->getMessage());
+            return [];
+        }
     }
     
     private function getCustomerGrowthData() {
-        return $this->customerModel->getCustomerGrowthData();
+        try {
+            return $this->customerModel->getCustomerGrowthData();
+        } catch (Exception $e) {
+            error_log("BestDinersController::getCustomerGrowthData - Error: " . $e->getMessage());
+            return [];
+        }
     }
     
     public function customerDetail($id) {
