@@ -1,6 +1,6 @@
 <?php
 // Application configuration
-define('APP_NAME', 'Sistema de Administraci贸n GestoRest');
+define('APP_NAME', 'Sistema GestoRest');
 define('APP_VERSION', '1.0.0');
 
 // Database configuration
