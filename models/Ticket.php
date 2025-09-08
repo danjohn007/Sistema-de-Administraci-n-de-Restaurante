@@ -487,13 +487,14 @@ class Ticket extends BaseModel {
         $query = "SELECT t.*, 
                          tn.number as table_number,
                          u.name as cashier_name,
-                         w.name as waiter_name,
+                         u_waiter.name as waiter_name,
                          w.employee_code
                   FROM tickets t
                   LEFT JOIN orders o ON t.order_id = o.id
                   LEFT JOIN tables tn ON o.table_id = tn.id
                   LEFT JOIN users u ON t.cashier_id = u.id
                   LEFT JOIN waiters w ON o.waiter_id = w.id
+                  LEFT JOIN users u_waiter ON w.user_id = u_waiter.id
                   WHERE t.payment_method = 'pendiente_por_cobrar'
                   ORDER BY t.created_at DESC";
         
@@ -503,7 +504,7 @@ class Ticket extends BaseModel {
     }
     
     public function updatePaymentMethod($ticketId, $paymentMethod) {
-        $validMethods = ['efectivo', 'tarjeta', 'transferencia', 'intercambio'];
+        $validMethods = ['efectivo', 'tarjeta', 'transferencia', 'intercambio', 'pendiente_por_cobrar'];
         if (!in_array($paymentMethod, $validMethods)) {
             return false;
         }
@@ -643,13 +644,14 @@ class Ticket extends BaseModel {
                          o.table_id,
                          tn.number as table_number,
                          u.name as cashier_name,
-                         w.name as waiter_name,
+                         u_waiter.name as waiter_name,
                          w.employee_code
                   FROM tickets t
                   LEFT JOIN orders o ON t.order_id = o.id
                   LEFT JOIN tables tn ON o.table_id = tn.id
                   LEFT JOIN users u ON t.cashier_id = u.id
                   LEFT JOIN waiters w ON o.waiter_id = w.id
+                  LEFT JOIN users u_waiter ON w.user_id = u_waiter.id
                   WHERE t.payment_method = ?
                     AND DATE(t.created_at) BETWEEN ? AND ?
                   ORDER BY t.created_at DESC";
