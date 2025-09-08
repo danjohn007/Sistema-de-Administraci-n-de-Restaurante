@@ -160,5 +160,9 @@ class Product extends BaseModel {
         $result = $stmt->fetch();
         return $result['total_value'] ?: 0;
     }
+    
+    public function getAll() {
+        return $this->findAll(['active' => 1], 'name ASC');
+    }
 }
 ?>
