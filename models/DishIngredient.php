@@ -112,8 +112,13 @@ class DishIngredient extends BaseModel {
         $ingredients = $this->getIngredientsByDish($dishId);
         $movementModel = new InventoryMovement();
         
+        // Check if we need to manage our own transaction
+        $shouldManageTransaction = !$this->db->getConnection()->inTransaction();
+        
         try {
-            $this->db->beginTransaction();
+            if ($shouldManageTransaction) {
+                $this->db->beginTransaction();
+            }
             
             foreach ($ingredients as $ingredient) {
                 $neededQuantity = $ingredient['quantity_needed'] * $quantity;
@@ -132,11 +137,15 @@ class DishIngredient extends BaseModel {
                 ]);
             }
             
-            $this->db->commit();
+            if ($shouldManageTransaction) {
+                $this->db->commit();
+            }
             return true;
             
         } catch (Exception $e) {
-            $this->db->rollback();
+            if ($shouldManageTransaction) {
+                $this->db->rollback();
+            }
             throw $e;
         }
     }

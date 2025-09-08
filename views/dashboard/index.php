@@ -451,6 +451,13 @@
                                 <i class="bi bi-people-fill"></i><br>Top por Visitas
                             </a>
                         </div>
+                        <?php if ($user['role'] === ROLE_SUPERADMIN): ?>
+                        <div class="col-md-2 mb-2">
+                            <a href="<?= BASE_URL ?>/inventory/settings" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-gear-fill"></i><br>Configuraciones Generales
+                            </a>
+                        </div>
+                        <?php endif; ?>
                     <?php elseif ($user['role'] === ROLE_WAITER): ?>
                         <div class="col-md-3 mb-2">
                             <a href="<?= BASE_URL ?>/orders/create" class="btn btn-outline-primary w-100">
