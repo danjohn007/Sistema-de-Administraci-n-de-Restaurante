@@ -1,12 +1,12 @@
 <?php
 // Application configuration
-define('APP_NAME', 'Sistema de Administración La Troje');
+define('APP_NAME', 'Sistema de Administraci贸n GestoRest');
 define('APP_VERSION', '1.0.0');
 
 // Database configuration
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'exhacien_restaurante');
-define('DB_USER', 'exhacien_restaurante');
+define('DB_NAME', 'ejercito_gestorest');
+define('DB_USER', 'ejercito_gestorest');
 define('DB_PASS', 'Danjohn007!');
 define('DB_CHARSET', 'utf8mb4');
 
