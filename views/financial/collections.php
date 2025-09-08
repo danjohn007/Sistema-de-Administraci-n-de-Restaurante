@@ -72,7 +72,7 @@
                                         onclick="showPaymentModal(<?= $ticket['id'] ?>, '<?= htmlspecialchars($ticket['ticket_number']) ?>', <?= $ticket['total'] ?>)">
                                     <i class="bi bi-check-circle"></i> Marcar como Pagado
                                 </button>
-                                <a href="<?= BASE_URL ?>/tickets/view/<?= $ticket['id'] ?>" 
+                                <a href="<?= BASE_URL ?>/tickets/show/<?= $ticket['id'] ?>" 
                                    class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-eye"></i> Ver Detalles
                                 </a>

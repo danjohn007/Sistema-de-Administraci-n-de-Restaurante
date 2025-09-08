@@ -77,6 +77,11 @@ class TicketsController extends BaseController {
         ]);
     }
     
+    public function view($id) {
+        // Alias for show() method for backward compatibility
+        $this->show($id);
+    }
+    
     public function print($id) {
         $ticket = $this->ticketModel->getTicketWithDetails($id);
         if (!$ticket) {

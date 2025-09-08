@@ -99,7 +99,7 @@
                             </small>
                         </td>
                         <td>
-                            <a href="<?= BASE_URL ?>/tickets/view/<?= $ticket['id'] ?>" 
+                            <a href="<?= BASE_URL ?>/tickets/show/<?= $ticket['id'] ?>" 
                                class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye"></i> Ver Detalles
                             </a>
