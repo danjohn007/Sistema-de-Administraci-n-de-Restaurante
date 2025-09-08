@@ -62,6 +62,14 @@ abstract class BaseController {
         ];
     }
     
+    protected function getCurrentUserRole() {
+        if (!$this->isLoggedIn()) {
+            return null;
+        }
+        
+        return $_SESSION['user_role'] ?? null;
+    }
+    
     protected function redirect($url, $type = null, $message = null) {
         if ($message) {
             $_SESSION['flash_' . ($type ?? 'info')] = $message;
