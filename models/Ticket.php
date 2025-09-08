@@ -87,6 +87,9 @@ class Ticket extends BaseModel {
                 $customerModel->updateStats($order['customer_id'], $order['total']);
             }
             
+            // Deduct inventory if enabled and auto-deduct is on
+            $this->deductInventoryForTicket($ticketId, $orderId, $cashierId);
+            
             // Free the table (set to available) since the ticket has been generated
             $tableModel = new Table();
             $tableModel->updateTableStatus($order['table_id'], TABLE_AVAILABLE);
@@ -207,6 +210,9 @@ class Ticket extends BaseModel {
                     $customerModel->updateStats($order['customer_id'], $order['total']);
                 }
             }
+            
+            // Deduct inventory for all orders
+            $this->deductInventoryForMultipleOrders($ticketId, $orderIds, $cashierId);
             
             // Free the table (set to available) since the ticket has been generated
             $tableModel = new Table();
@@ -675,6 +681,73 @@ class Ticket extends BaseModel {
         $stmt = $this->db->prepare($query);
         $stmt->execute([$dateFrom, $dateTo]);
         return $stmt->fetch();
+    }
+    
+    // ============= MÉTODOS DE INTEGRACIÓN CON INVENTARIO =============
+    
+    private function deductInventoryForTicket($ticketId, $orderId, $userId) {
+        // Verificar si el inventario y la deducción automática están habilitados
+        $systemSettingsModel = new SystemSettings();
+        
+        if (!$systemSettingsModel->isInventoryEnabled() || !$systemSettingsModel->isAutoDeductInventoryEnabled()) {
+            return; // No hacer nada si no está habilitado
+        }
+        
+        try {
+            // Obtener los items del pedido
+            $orderItemModel = new OrderItem();
+            $orderItems = $orderItemModel->getItemsByOrder($orderId);
+            
+            $dishIngredientModel = new DishIngredient();
+            
+            foreach ($orderItems as $item) {
+                // Descontar ingredientes por cada platillo vendido
+                $dishIngredientModel->deductIngredientsForDish(
+                    $item['dish_id'], 
+                    $item['quantity'], 
+                    $userId, 
+                    $ticketId
+                );
+            }
+            
+        } catch (Exception $e) {
+            // Log the error but don't fail the ticket creation
+            error_log("Error deducting inventory for ticket {$ticketId}: " . $e->getMessage());
+            // En producción podrías querer mostrar una advertencia al usuario
+        }
+    }
+    
+    private function deductInventoryForMultipleOrders($ticketId, $orderIds, $userId) {
+        // Verificar si el inventario y la deducción automática están habilitados
+        $systemSettingsModel = new SystemSettings();
+        
+        if (!$systemSettingsModel->isInventoryEnabled() || !$systemSettingsModel->isAutoDeductInventoryEnabled()) {
+            return; // No hacer nada si no está habilitado
+        }
+        
+        try {
+            $orderItemModel = new OrderItem();
+            $dishIngredientModel = new DishIngredient();
+            
+            foreach ($orderIds as $orderId) {
+                // Obtener los items de cada pedido
+                $orderItems = $orderItemModel->getItemsByOrder($orderId);
+                
+                foreach ($orderItems as $item) {
+                    // Descontar ingredientes por cada platillo vendido
+                    $dishIngredientModel->deductIngredientsForDish(
+                        $item['dish_id'], 
+                        $item['quantity'], 
+                        $userId, 
+                        $ticketId
+                    );
+                }
+            }
+            
+        } catch (Exception $e) {
+            // Log the error but don't fail the ticket creation
+            error_log("Error deducting inventory for multiple orders ticket {$ticketId}: " . $e->getMessage());
+        }
     }
 }
 ?>

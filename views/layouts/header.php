@@ -103,6 +103,32 @@
                             <?php endif; ?>
                         </ul>
                     </li>
+                    
+                    <?php if (in_array($_SESSION['user_role'], [ROLE_ADMIN, ROLE_SUPERADMIN, ROLE_CASHIER])): ?>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-boxes"></i> Inventario
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/inventory">
+                                <i class="bi bi-list"></i> Productos
+                            </a></li>
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/inventory/movements">
+                                <i class="bi bi-arrow-up-down"></i> Movimientos
+                            </a></li>
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/inventory/report">
+                                <i class="bi bi-graph-up"></i> Reportes
+                            </a></li>
+                            <?php if ($_SESSION['user_role'] === ROLE_SUPERADMIN): ?>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/inventory/settings">
+                                <i class="bi bi-gear"></i> Configuración
+                            </a></li>
+                            <?php endif; ?>
+                        </ul>
+                    </li>
+                    <?php endif; ?>
+                    
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-star-fill"></i> Clientes

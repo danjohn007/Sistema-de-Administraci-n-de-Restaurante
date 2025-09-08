@@ -3,6 +3,7 @@ class TicketsController extends BaseController {
     private $ticketModel;
     private $orderModel;
     private $tableModel;
+    private $systemSettingsModel;
     
     public function __construct() {
         parent::__construct();
@@ -10,6 +11,7 @@ class TicketsController extends BaseController {
         $this->ticketModel = new Ticket();
         $this->orderModel = new Order();
         $this->tableModel = new Table();
+        $this->systemSettingsModel = new SystemSettings();
     }
     
     public function index() {
@@ -198,10 +200,23 @@ class TicketsController extends BaseController {
             'payment_method' => ['required' => true]
         ]);
         
+        // Get available payment methods based on system settings
+        $systemSettingsModel = new SystemSettings();
+        $validMethods = ['efectivo', 'tarjeta', 'transferencia', 'intercambio'];
+        
+        // Add collections method only if enabled
+        if ($systemSettingsModel->isCollectionsEnabled()) {
+            $validMethods[] = 'pendiente_por_cobrar';
+        }
+        
         // Validate payment method
-        $validMethods = ['efectivo', 'tarjeta', 'transferencia', 'intercambio', 'pendiente_por_cobrar'];
         if (!in_array($data['payment_method'] ?? '', $validMethods)) {
-            $errors['payment_method'] = 'Método de pago inválido';
+            $errors['payment_method'] = 'Método de pago inválido o no disponible';
+        }
+        
+        // Special validation for collections
+        if ($data['payment_method'] === 'pendiente_por_cobrar' && !$systemSettingsModel->isCollectionsEnabled()) {
+            $errors['payment_method'] = 'Las cuentas por cobrar están deshabilitadas';
         }
         
         // Validate that either table_id or order_id is provided
@@ -330,10 +345,22 @@ class TicketsController extends BaseController {
             'payment_method' => ['required' => true]
         ]);
         
+        // Get available payment methods based on system settings
+        $validMethods = ['efectivo', 'tarjeta', 'transferencia', 'intercambio'];
+        
+        // Add collections method only if enabled
+        if ($this->systemSettingsModel->isCollectionsEnabled()) {
+            $validMethods[] = 'pendiente_por_cobrar';
+        }
+        
         // Validate payment method
-        $validMethods = ['efectivo', 'tarjeta', 'transferencia', 'intercambio', 'pendiente_por_cobrar'];
         if (!in_array($data['payment_method'] ?? '', $validMethods)) {
-            $errors['payment_method'] = 'Método de pago inválido';
+            $errors['payment_method'] = 'Método de pago inválido o no disponible';
+        }
+        
+        // Special validation for collections
+        if ($data['payment_method'] === 'pendiente_por_cobrar' && !$this->systemSettingsModel->isCollectionsEnabled()) {
+            $errors['payment_method'] = 'Las cuentas por cobrar están deshabilitadas';
         }
         
         // Validate order exists and is ready
