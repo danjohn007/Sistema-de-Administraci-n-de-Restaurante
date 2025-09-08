@@ -1,0 +1,22 @@
+# Test files and testing infrastructure
+test_*.php
+test_database.sqlite
+config/test_*.php
+config/test_database.sqlite
+
+# Development and testing
+node_modules/
+.vscode/
+.idea/
+*.log
+
+# Database
+*.sqlite
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
