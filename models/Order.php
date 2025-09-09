@@ -365,12 +365,14 @@ class Order extends BaseModel {
     public function getFuturePickupOrders($filters = []) {
         $query = "SELECT o.*, t.number as table_number, 
                          u.name as waiter_name, w.employee_code,
+                         c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
                          COUNT(oi.id) as items_count,
                          COALESCE(SUM(oi.subtotal), 0) as total
                   FROM {$this->table} o
                   LEFT JOIN tables t ON o.table_id = t.id
                   LEFT JOIN waiters w ON o.waiter_id = w.id
                   LEFT JOIN users u ON w.user_id = u.id
+                  LEFT JOIN customers c ON o.customer_id = c.id
                   LEFT JOIN order_items oi ON o.id = oi.order_id
                   WHERE o.is_pickup = 1 AND DATE(o.pickup_datetime) > CURDATE()";
         
@@ -399,12 +401,14 @@ class Order extends BaseModel {
         
         $query = "SELECT o.*, t.number as table_number, 
                          u.name as waiter_name, w.employee_code,
+                         c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
                          COUNT(oi.id) as items_count,
                          COALESCE(SUM(oi.subtotal), 0) as total
                   FROM {$this->table} o
                   LEFT JOIN tables t ON o.table_id = t.id
                   LEFT JOIN waiters w ON o.waiter_id = w.id
                   LEFT JOIN users u ON w.user_id = u.id
+                  LEFT JOIN customers c ON o.customer_id = c.id
                   LEFT JOIN order_items oi ON o.id = oi.order_id
                   WHERE (DATE(o.created_at) = ? OR (o.is_pickup = 1 AND DATE(o.pickup_datetime) = ?))";
         
@@ -418,6 +422,17 @@ class Order extends BaseModel {
         if (isset($filters['status'])) {
             $query .= " AND o.status = ?";
             $params[] = $filters['status'];
+        }
+        
+        // Add search functionality
+        if (isset($filters['search']) && !empty($filters['search'])) {
+            $searchTerm = '%' . $filters['search'] . '%';
+            $query .= " AND (o.customer_name LIKE ? OR c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ? OR t.number LIKE ?)";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
         }
         
         $query .= " GROUP BY o.id ORDER BY o.created_at DESC";
@@ -497,6 +512,7 @@ class Order extends BaseModel {
     public function getExpiredOrders($filters = []) {
         $query = "SELECT o.*, t.number as table_number, 
                          u.name as waiter_name, w.employee_code,
+                         c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
                          COUNT(oi.id) as items_count,
                          COALESCE(SUM(oi.subtotal), 0) as total,
                          TIMESTAMPDIFF(HOUR, o.created_at, NOW()) as hours_since_created
@@ -504,6 +520,7 @@ class Order extends BaseModel {
                   LEFT JOIN tables t ON o.table_id = t.id
                   LEFT JOIN waiters w ON o.waiter_id = w.id
                   LEFT JOIN users u ON w.user_id = u.id
+                  LEFT JOIN customers c ON o.customer_id = c.id
                   LEFT JOIN order_items oi ON o.id = oi.order_id
                   WHERE o.status IN ('pendiente', 'en_preparacion', 'listo')
                   AND DATE(o.created_at) < CURDATE()";

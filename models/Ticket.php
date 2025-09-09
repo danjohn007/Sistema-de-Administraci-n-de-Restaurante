@@ -274,15 +274,18 @@ class Ticket extends BaseModel {
         return $ticket;
     }
     
-    public function getTicketsByDate($date = null, $cashierId = null) {
+    public function getTicketsByDate($date = null, $cashierId = null, $filters = []) {
         $date = $date ?: date('Y-m-d');
         
         $query = "SELECT t.*, o.table_id, tb.number as table_number,
-                         u.name as cashier_name
+                         u.name as cashier_name,
+                         c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
+                         o.customer_name as order_customer_name
                   FROM {$this->table} t
                   JOIN orders o ON t.order_id = o.id
-                  JOIN tables tb ON o.table_id = tb.id
+                  LEFT JOIN tables tb ON o.table_id = tb.id
                   JOIN users u ON t.cashier_id = u.id
+                  LEFT JOIN customers c ON o.customer_id = c.id
                   WHERE DATE(t.created_at) = ?";
         
         $params = [$date];
@@ -290,6 +293,17 @@ class Ticket extends BaseModel {
         if ($cashierId) {
             $query .= " AND t.cashier_id = ?";
             $params[] = $cashierId;
+        }
+        
+        // Add search functionality
+        if (isset($filters['search']) && !empty($filters['search'])) {
+            $searchTerm = '%' . $filters['search'] . '%';
+            $query .= " AND (o.customer_name LIKE ? OR c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ? OR tb.number LIKE ?)";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
         }
         
         $query .= " ORDER BY t.created_at DESC";
@@ -489,23 +503,40 @@ class Ticket extends BaseModel {
         return $combinedData;
     }
     
-    public function getPendingPayments() {
+    public function getPendingPayments($filters = []) {
         $query = "SELECT t.*, 
                          tn.number as table_number,
                          u.name as cashier_name,
                          u_waiter.name as waiter_name,
-                         w.employee_code
+                         w.employee_code,
+                         c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
+                         o.customer_name as order_customer_name
                   FROM tickets t
                   LEFT JOIN orders o ON t.order_id = o.id
                   LEFT JOIN tables tn ON o.table_id = tn.id
                   LEFT JOIN users u ON t.cashier_id = u.id
                   LEFT JOIN waiters w ON o.waiter_id = w.id
                   LEFT JOIN users u_waiter ON w.user_id = u_waiter.id
-                  WHERE t.payment_method = 'pendiente_por_cobrar'
-                  ORDER BY t.created_at DESC";
+                  LEFT JOIN customers c ON o.customer_id = c.id
+                  WHERE t.payment_method = 'pendiente_por_cobrar'";
+        
+        $params = [];
+        
+        // Add search functionality
+        if (isset($filters['search']) && !empty($filters['search'])) {
+            $searchTerm = '%' . $filters['search'] . '%';
+            $query .= " AND (o.customer_name LIKE ? OR c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ? OR tn.number LIKE ?)";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+        }
+        
+        $query .= " ORDER BY t.created_at DESC";
         
         $stmt = $this->db->prepare($query);
-        $stmt->execute();
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
     
