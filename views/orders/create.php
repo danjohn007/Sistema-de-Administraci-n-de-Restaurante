@@ -73,13 +73,14 @@
                     
                     <!-- Customer Search Section -->
                     <div class="mb-3">
-                        <label class="form-label">Cliente (Opcional)</label>
+                        <label class="form-label">Cliente *</label>
                         <div class="input-group mb-2">
                             <input type="text" 
-                                   class="form-control" 
+                                   class="form-control <?= isset($errors['customer_id']) ? 'is-invalid' : '' ?>" 
                                    id="customer_search" 
                                    placeholder="Buscar por nombre o teléfono..."
-                                   autocomplete="off">
+                                   autocomplete="off"
+                                   required>
                             <button type="button" 
                                     class="btn btn-outline-secondary" 
                                     id="clear_customer">
@@ -94,7 +95,7 @@
                         <div id="selected_customer" class="alert alert-info" style="display: none;">
                             <strong>Cliente seleccionado:</strong> 
                             <span id="customer_display"></span>
-                            <input type="hidden" id="customer_id" name="customer_id" value="">
+                            <input type="hidden" id="customer_id" name="customer_id" value="<?= htmlspecialchars($old['customer_id'] ?? '') ?>">
                         </div>
                         
                         <!-- New Customer Form -->
@@ -104,20 +105,27 @@
                                        class="form-control form-control-sm" 
                                        id="new_customer_name" 
                                        name="new_customer_name" 
-                                       placeholder="Nombre completo">
+                                       placeholder="Nombre completo *"
+                                       required>
                             </div>
                             <div class="col-md-6">
                                 <input type="tel" 
                                        class="form-control form-control-sm" 
                                        id="new_customer_phone" 
                                        name="new_customer_phone" 
-                                       placeholder="Teléfono">
+                                       placeholder="Teléfono *"
+                                       required>
                             </div>
                         </div>
                         
                         <div class="form-text">
-                            Busque un cliente existente o deje vacío para pedido sin cliente asignado
+                            Debe seleccionar un cliente existente o crear uno nuevo
                         </div>
+                        <?php if (isset($errors['customer_id'])): ?>
+                            <div class="invalid-feedback d-block">
+                                <?= htmlspecialchars($errors['customer_id']) ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                     
                     <div class="mb-3">
@@ -143,9 +151,26 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-cup-hot"></i> Seleccionar Platillos
-                    </h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-cup-hot"></i> Seleccionar Platillos
+                        </h5>
+                        <div class="input-group" style="width: 300px;">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="dish_search" 
+                                   placeholder="Buscar platillos..."
+                                   autocomplete="off">
+                            <button type="button" 
+                                    class="btn btn-outline-secondary" 
+                                    id="clear_dish_search">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
                     <?php if (isset($errors['items'])): ?>
@@ -217,13 +242,32 @@
                 <a href="<?= BASE_URL ?>/orders" class="btn btn-secondary">
                     <i class="bi bi-x-circle"></i> Cancelar
                 </a>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" id="create-order-btn">
                     <i class="bi bi-check-circle"></i> Crear Pedido
                 </button>
             </div>
         </div>
     </div>
 </form>
+
+<!-- Fixed Create Order Button -->
+<div class="fixed-bottom bg-white border-top p-3 shadow-lg" id="fixed-order-section" style="display: none;">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                    <h5 class="mb-0 me-3">Total del Pedido:</h5>
+                    <h4 class="text-primary mb-0" id="fixedOrderTotal">$0.00</h4>
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <button type="submit" form="orderForm" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-circle"></i> CREAR PEDIDO
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -411,7 +455,85 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         totalElement.textContent = '$' + total.toFixed(2);
+        
+        // Update fixed button total
+        const fixedTotal = document.getElementById('fixedOrderTotal');
+        if (fixedTotal) {
+            fixedTotal.textContent = '$' + total.toFixed(2);
+        }
+        
+        // Show/hide fixed button based on total
+        const fixedSection = document.getElementById('fixed-order-section');
+        if (total > 0) {
+            fixedSection.style.display = 'block';
+        } else {
+            fixedSection.style.display = 'none';
+        }
     }
+    
+    // Product search functionality
+    const dishSearch = document.getElementById('dish_search');
+    const clearDishSearch = document.getElementById('clear_dish_search');
+    
+    if (dishSearch) {
+        dishSearch.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            const dishCards = document.querySelectorAll('.dish-card');
+            
+            dishCards.forEach(function(card) {
+                const dishName = card.querySelector('.card-title').textContent.toLowerCase();
+                const dishDescription = card.querySelector('.card-text') ? card.querySelector('.card-text').textContent.toLowerCase() : '';
+                
+                if (dishName.includes(query) || dishDescription.includes(query)) {
+                    card.closest('.col-md-6').style.display = 'block';
+                } else {
+                    card.closest('.col-md-6').style.display = 'none';
+                }
+            });
+            
+            // Show/hide category headers
+            const categories = document.querySelectorAll('h6.text-muted');
+            categories.forEach(function(category) {
+                const nextRow = category.nextElementSibling;
+                if (nextRow && nextRow.classList.contains('row')) {
+                    const visibleCards = nextRow.querySelectorAll('.col-md-6[style="display: block;"], .col-md-6:not([style*="display: none"])');
+                    if (visibleCards.length > 0) {
+                        category.style.display = 'block';
+                    } else {
+                        category.style.display = 'none';
+                    }
+                }
+            });
+        });
+        
+        clearDishSearch.addEventListener('click', function() {
+            dishSearch.value = '';
+            const dishCards = document.querySelectorAll('.dish-card');
+            dishCards.forEach(function(card) {
+                card.closest('.col-md-6').style.display = 'block';
+            });
+            
+            const categories = document.querySelectorAll('h6.text-muted');
+            categories.forEach(function(category) {
+                category.style.display = 'block';
+            });
+        });
+    }
+    
+    // Form validation for customer requirement
+    form.addEventListener('submit', function(e) {
+        const customerId = document.getElementById('customer_id').value;
+        const newCustomerName = document.getElementById('new_customer_name').value;
+        const newCustomerPhone = document.getElementById('new_customer_phone').value;
+        
+        if (!customerId && (!newCustomerName || !newCustomerPhone)) {
+            e.preventDefault();
+            alert('Debe seleccionar un cliente existente o crear uno nuevo con nombre y teléfono.');
+            return false;
+        }
+        
+        return true;
+    });
 });
 </script>
 
