@@ -60,13 +60,8 @@ class OrdersController extends BaseController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->processCreate();
         } else {
-            // Get available tables for waiters, or all tables for admins
-            if ($user['role'] === ROLE_WAITER) {
-                $waiter = $this->waiterModel->findBy('user_id', $user['id']);
-                $tables = $waiter ? $this->tableModel->getWaiterTables($waiter['id']) : [];
-            } else {
-                $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
-            }
+            // Now all users (including waiters) can see all active tables
+            $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
             
             $dishes = $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC');
             
@@ -422,8 +417,13 @@ class OrdersController extends BaseController {
         try {
             $orderId = $this->orderModel->createOrderWithItems($orderData, $items);
             
-            // Update table status to occupied
-            $this->tableModel->update($_POST['table_id'], ['status' => TABLE_OCCUPIED]);
+            // Block table by assigning it to the waiter and setting status to occupied
+            if (!empty($_POST['table_id'])) {
+                $this->tableModel->update($_POST['table_id'], [
+                    'status' => TABLE_OCCUPIED,
+                    'waiter_id' => $waiterId  // Block the table for this waiter
+                ]);
+            }
             
             $this->redirect('orders/show/' . $orderId, 'success', 'Pedido creado correctamente');
         } catch (Exception $e) {

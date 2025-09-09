@@ -90,9 +90,12 @@ class Ticket extends BaseModel {
             // Deduct inventory if enabled and auto-deduct is on
             $this->deductInventoryForTicket($ticketId, $orderId, $cashierId);
             
-            // Free the table (set to available) since the ticket has been generated
+            // Free the table completely (set to available and remove waiter assignment)
             $tableModel = new Table();
-            $tableModel->updateTableStatus($order['table_id'], TABLE_AVAILABLE);
+            $tableModel->update($order['table_id'], [
+                'status' => TABLE_AVAILABLE,
+                'waiter_id' => null  // Remove waiter assignment
+            ]);
             
             $this->db->commit();
             error_log("Ticket created successfully with ID: $ticketId");
@@ -214,9 +217,12 @@ class Ticket extends BaseModel {
             // Deduct inventory for all orders
             $this->deductInventoryForMultipleOrders($ticketId, $orderIds, $cashierId);
             
-            // Free the table (set to available) since the ticket has been generated
+            // Free the table completely (set to available and remove waiter assignment)
             $tableModel = new Table();
-            $tableModel->updateTableStatus($tableId, TABLE_AVAILABLE);
+            $tableModel->update($tableId, [
+                'status' => TABLE_AVAILABLE,
+                'waiter_id' => null  // Remove waiter assignment
+            ]);
             
             $this->db->commit();
             error_log("Multiple orders ticket created successfully with ID: $ticketId");
@@ -623,9 +629,12 @@ class Ticket extends BaseModel {
                 $customerModel->updateStats($order['customer_id'], $order['total']);
             }
             
-            // Free the table (set to available) since the ticket has been generated
+            // Free the table completely (set to available and remove waiter assignment)
             if ($order['table_id']) {
-                $tableModel->updateTableStatus($order['table_id'], TABLE_AVAILABLE);
+                $tableModel->update($order['table_id'], [
+                    'status' => TABLE_AVAILABLE,
+                    'waiter_id' => null  // Remove waiter assignment
+                ]);
             }
             
             $this->db->commit();

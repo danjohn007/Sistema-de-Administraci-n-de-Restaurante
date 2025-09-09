@@ -22,14 +22,14 @@
                     <div class="row">
                         <div class="col-md-6">
                             <h6 class="mb-3">
-                                <i class="bi bi-table"></i> Mesas Disponibles
-                                <span class="badge bg-success"><?= count($available_tables) ?></span>
+                                <i class="bi bi-table"></i> Todas las Mesas del Sistema
+                                <span class="badge bg-info"><?= count($available_tables) ?></span>
                             </h6>
                             
                             <?php if (empty($available_tables)): ?>
                                 <div class="alert alert-info">
                                     <i class="bi bi-info-circle"></i>
-                                    No hay mesas disponibles para asignar
+                                    No hay mesas disponibles en el sistema
                                 </div>
                             <?php else: ?>
                                 <div class="table-responsive">
@@ -42,6 +42,7 @@
                                                 <th>Mesa #</th>
                                                 <th>Capacidad</th>
                                                 <th>Estado</th>
+                                                <th>Bloqueada por</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -67,7 +68,49 @@
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <span class="badge bg-success">Disponible</span>
+                                                    <?php
+                                                    $statusClass = '';
+                                                    $statusText = '';
+                                                    switch($table['status']) {
+                                                        case TABLE_AVAILABLE:
+                                                            $statusClass = 'bg-success';
+                                                            $statusText = 'Disponible';
+                                                            break;
+                                                        case TABLE_OCCUPIED:
+                                                            $statusClass = 'bg-warning';
+                                                            $statusText = 'Ocupada';
+                                                            break;
+                                                        case TABLE_BILL_REQUESTED:
+                                                            $statusClass = 'bg-info';
+                                                            $statusText = 'Cuenta Solicitada';
+                                                            break;
+                                                        default:
+                                                            $statusClass = 'bg-secondary';
+                                                            $statusText = ucfirst($table['status']);
+                                                    }
+                                                    ?>
+                                                    <span class="badge <?= $statusClass ?>">
+                                                        <?= $statusText ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <?php if ($table['waiter_id']): ?>
+                                                        <?php 
+                                                        // Get waiter info for this table
+                                                        $tableWaiter = null;
+                                                        foreach ($assigned_tables as $assignedTable) {
+                                                            if ($assignedTable['id'] == $table['id']) {
+                                                                $tableWaiter = $assignedTable;
+                                                                break;
+                                                            }
+                                                        }
+                                                        ?>
+                                                        <small class="text-muted">
+                                                            <?= $tableWaiter ? 'Usuario #' . $table['waiter_id'] : 'Mesa bloqueada' ?>
+                                                        </small>
+                                                    <?php else: ?>
+                                                        <small class="text-success">Libre</small>
+                                                    <?php endif; ?>
                                                 </td>
                                             </tr>
                                             <?php endforeach; ?>
@@ -79,14 +122,14 @@
                         
                         <div class="col-md-6">
                             <h6 class="mb-3">
-                                <i class="bi bi-check-circle"></i> Mesas Actualmente Asignadas
+                                <i class="bi bi-check-circle"></i> Mesas Bloqueadas por este Mesero
                                 <span class="badge bg-primary"><?= count($assigned_tables) ?></span>
                             </h6>
                             
                             <?php if (empty($assigned_tables)): ?>
                                 <div class="alert alert-warning">
                                     <i class="bi bi-exclamation-triangle"></i>
-                                    Este mesero no tiene mesas asignadas
+                                    Este mesero no tiene mesas bloqueadas actualmente
                                 </div>
                             <?php else: ?>
                                 <div class="table-responsive">
@@ -146,10 +189,10 @@
                     
                     <hr class="my-4">
                     
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        <strong>¡Atención!</strong> Al guardar los cambios, se desasignarán todas las mesas 
-                        actualmente asignadas y se asignarán solo las mesas seleccionadas.
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Nuevo Sistema de Asignación:</strong> Ahora todos los meseros pueden trabajar con todas las mesas. 
+                        Las mesas se bloquean automáticamente cuando un mesero crea un pedido y se liberan cuando se genera el ticket.
                     </div>
                     
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">

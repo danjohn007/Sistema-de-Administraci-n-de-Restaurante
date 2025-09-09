@@ -256,12 +256,14 @@ class WaitersController extends BaseController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->processAssignTables($id);
         } else {
-            $availableTables = $this->tableModel->getAvailableTables();
+            // Show ALL tables to waiters now, not just available ones
+            $allTables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+            // Get tables currently "assigned" to this waiter (those they have blocked)
             $assignedTables = $this->tableModel->findAll(['waiter_id' => $id, 'active' => 1]);
             
             $this->view('waiters/assign_tables', [
                 'waiter' => $waiter,
-                'available_tables' => $availableTables,
+                'available_tables' => $allTables, // Changed: now all tables are "available" for assignment
                 'assigned_tables' => $assignedTables
             ]);
         }
