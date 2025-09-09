@@ -20,11 +20,11 @@
     </div>
 </div>
 
-<!-- Date Filter -->
+<!-- Date Filter and Search -->
 <div class="card mb-4">
     <div class="card-body">
         <form method="GET" action="<?= BASE_URL ?>/tickets" class="row g-3 align-items-end">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="date" class="form-label">Fecha:</label>
                 <input type="date" 
                        class="form-control" 
@@ -32,12 +32,26 @@
                        name="date" 
                        value="<?= htmlspecialchars($selectedDate) ?>">
             </div>
+            <div class="col-md-3">
+                <label for="search" class="form-label">Buscar:</label>
+                <input type="text" 
+                       class="form-control" 
+                       id="search" 
+                       name="search" 
+                       placeholder="Cliente, teléfono, email, mesa..."
+                       value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+            </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-outline-primary">
-                    <i class="bi bi-search"></i> Filtrar
+                    <i class="bi bi-search"></i> Buscar
                 </button>
+                <?php if (!empty($_GET['search'])): ?>
+                    <a href="<?= BASE_URL ?>/tickets?date=<?= $selectedDate ?>" class="btn btn-outline-secondary ms-1">
+                        <i class="bi bi-x"></i>
+                    </a>
+                <?php endif; ?>
             </div>
-            <div class="col-md-7 text-end">
+            <div class="col-md-5 text-end">
                 <div class="d-flex justify-content-end gap-3">
                     <div class="text-center">
                         <small class="text-muted">Total Tickets</small>
@@ -86,6 +100,7 @@
                     <tr>
                         <th>Ticket #</th>
                         <th>Mesa</th>
+                        <th>Cliente</th>
                         <th>Cajero</th>
                         <th>Subtotal</th>
                         <th>Impuesto</th>
@@ -103,6 +118,14 @@
                         </td>
                         <td>
                             <span class="badge bg-info">Mesa <?= $ticket['table_number'] ?></span>
+                        </td>
+                        <td>
+                            <i class="bi bi-person-fill text-info"></i> 
+                            <small class="text-muted">Cliente:</small><br>
+                            <?= htmlspecialchars($ticket['customer_name'] ?: $ticket['order_customer_name'] ?: 'Público') ?>
+                            <?php if (!empty($ticket['customer_phone'])): ?>
+                                <br><small class="text-muted"><?= htmlspecialchars($ticket['customer_phone']) ?></small>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <?= htmlspecialchars($ticket['cashier_name']) ?>

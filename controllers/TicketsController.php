@@ -26,7 +26,13 @@ class TicketsController extends BaseController {
         // Get date filter from request
         $date = $_GET['date'] ?? date('Y-m-d');
         
-        $tickets = $this->ticketModel->getTicketsByDate($date, $filters['cashier_id'] ?? null);
+        // Get search filters
+        $searchFilters = [];
+        if (isset($_GET['search']) && !empty($_GET['search'])) {
+            $searchFilters['search'] = $_GET['search'];
+        }
+        
+        $tickets = $this->ticketModel->getTicketsByDate($date, $filters['cashier_id'] ?? null, $searchFilters);
         $salesReport = $this->ticketModel->getDailySalesReport($date);
         
         $this->view('tickets/index', [
@@ -269,8 +275,14 @@ class TicketsController extends BaseController {
     public function pendingPayments() {
         $this->requireRole([ROLE_ADMIN, ROLE_CASHIER]);
         
+        // Get search filters
+        $searchFilters = [];
+        if (isset($_GET['search']) && !empty($_GET['search'])) {
+            $searchFilters['search'] = $_GET['search'];
+        }
+        
         // Get all tickets with payment method 'pendiente_por_cobrar'
-        $pendingTickets = $this->ticketModel->getPendingPayments();
+        $pendingTickets = $this->ticketModel->getPendingPayments($searchFilters);
         
         $this->view('tickets/pending_payments', [
             'tickets' => $pendingTickets,

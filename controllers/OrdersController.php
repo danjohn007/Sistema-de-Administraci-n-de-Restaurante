@@ -34,6 +34,11 @@ class OrdersController extends BaseController {
             }
         }
         
+        // Add search filter
+        if (isset($_GET['search']) && !empty($_GET['search'])) {
+            $filters['search'] = $_GET['search'];
+        }
+        
         if (!isset($orders)) {
             if ($showFuture) {
                 $orders = $this->orderModel->getFuturePickupOrders($filters);

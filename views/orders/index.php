@@ -20,6 +20,35 @@
     </div>
 </div>
 
+<!-- Search Section for Today's Orders only -->
+<?php if (!isset($showFuture) || !$showFuture): ?>
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="<?= BASE_URL ?>/orders" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Buscar:</label>
+                <input type="text" 
+                       class="form-control" 
+                       id="search" 
+                       name="search" 
+                       placeholder="Cliente, teléfono, email, mesa..."
+                       value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+                <?php if (!empty($_GET['search'])): ?>
+                    <a href="<?= BASE_URL ?>/orders" class="btn btn-outline-secondary ms-1">
+                        <i class="bi bi-x"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        </form>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php if (empty($orders)): ?>
 <div class="card">
     <div class="card-body">

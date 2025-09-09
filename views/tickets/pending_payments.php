@@ -12,6 +12,33 @@
     </div>
 </div>
 
+<!-- Search Section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="<?= BASE_URL ?>/tickets/pendingPayments" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Buscar:</label>
+                <input type="text" 
+                       class="form-control" 
+                       id="search" 
+                       name="search" 
+                       placeholder="Cliente, teléfono, email, mesa..."
+                       value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+                <?php if (!empty($_GET['search'])): ?>
+                    <a href="<?= BASE_URL ?>/tickets/pendingPayments" class="btn btn-outline-secondary ms-1">
+                        <i class="bi bi-x"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="alert alert-info">
     <i class="bi bi-info-circle"></i> 
     <strong>Cuentas Pendientes:</strong> Estos son tickets generados con método de pago "Pendiente por Cobrar" que necesitan ser cobrados.
@@ -104,6 +131,7 @@
                     <tr>
                         <th>Ticket #</th>
                         <th>Mesa</th>
+                        <th>Cliente</th>
                         <th>Mesero</th>
                         <th>Cajero</th>
                         <th>Total</th>
@@ -123,6 +151,14 @@
                                 <span class="badge bg-secondary">Mesa <?= $ticket['table_number'] ?></span>
                             <?php else: ?>
                                 <span class="badge bg-info">Pickup</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <i class="bi bi-person-fill text-info"></i> 
+                            <small class="text-muted">Cliente:</small><br>
+                            <?= htmlspecialchars($ticket['customer_name'] ?: $ticket['order_customer_name'] ?: 'Público') ?>
+                            <?php if (!empty($ticket['customer_phone'])): ?>
+                                <br><small class="text-muted"><?= htmlspecialchars($ticket['customer_phone']) ?></small>
                             <?php endif; ?>
                         </td>
                         <td>
