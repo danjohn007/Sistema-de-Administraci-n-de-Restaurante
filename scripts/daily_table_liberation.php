@@ -2,11 +2,13 @@
 <?php
 /**
  * Daily Table Liberation Script
- * This script should be run daily at midnight to automatically liberate all tables
- * and mark orders from previous days as expired.
+ * This script should be run daily at 5:00 AM and 6:00 AM to automatically liberate tables:
+ * - At 5:00 AM: Liberate tables with orders from previous days that haven't been ticketed
+ * - At 6:00 AM: Liberate ALL tables to start the new day fresh
  * 
- * To set up as a cron job, add this line to your crontab:
- * 0 0 * * * /path/to/php /path/to/your/project/scripts/daily_table_liberation.php
+ * To set up as cron jobs, add these lines to your crontab:
+ * 0 5 * * * /path/to/php /path/to/your/project/scripts/daily_table_liberation.php expired
+ * 0 6 * * * /path/to/php /path/to/your/project/scripts/daily_table_liberation.php all
  */
 
 // Set the base path
@@ -31,7 +33,11 @@ spl_autoload_register(function ($class) {
 });
 
 echo "=== Daily Table Liberation Script ===\n";
-echo "Starting at: " . date('Y-m-d H:i:s') . "\n\n";
+echo "Starting at: " . date('Y-m-d H:i:s') . "\n";
+
+// Check command line argument for liberation type
+$liberationType = isset($argv[1]) ? $argv[1] : 'all';
+echo "Liberation type: " . ($liberationType === 'expired' ? 'Expired orders only' : 'All tables') . "\n\n";
 
 try {
     // Initialize models
@@ -51,12 +57,17 @@ try {
         echo "   No tables with expired orders found.\n";
     }
     
-    // 2. Liberate all tables
-    echo "\n2. Liberating all tables...\n";
-    $liberationResult = $tableModel->liberateTablesDaily();
+    // 2. Liberate tables based on type
+    if ($liberationType === 'expired') {
+        echo "\n2. Liberating tables with expired orders (from previous days)...\n";
+        $liberationResult = $tableModel->liberateExpiredTables();
+    } else {
+        echo "\n2. Liberating all tables...\n";
+        $liberationResult = $tableModel->liberateTablesDaily();
+    }
     
     if ($liberationResult) {
-        echo "   ✓ All tables have been liberated successfully.\n";
+        echo "   ✓ Tables have been liberated successfully.\n";
     } else {
         echo "   ✗ Error liberating tables.\n";
     }

@@ -132,6 +132,23 @@ class Table extends BaseModel {
         return $stmt->execute([TABLE_AVAILABLE]);
     }
     
+    public function liberateExpiredTables() {
+        // Free tables that have orders from previous days (not today)
+        $query = "UPDATE {$this->table} t
+                  SET t.status = ?, t.waiter_id = NULL, t.updated_at = CURRENT_TIMESTAMP
+                  WHERE t.active = 1 
+                  AND t.id IN (
+                      SELECT DISTINCT o.table_id 
+                      FROM orders o 
+                      WHERE o.table_id IS NOT NULL 
+                      AND DATE(o.created_at) < CURDATE()
+                      AND o.status NOT IN (?)
+                  )";
+        
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([TABLE_AVAILABLE, ORDER_DELIVERED]);
+    }
+    
     public function getTablesWithPendingOrders() {
         // Get tables that have orders that are not delivered (pending closure)
         $query = "SELECT DISTINCT t.*, 

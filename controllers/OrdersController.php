@@ -60,13 +60,8 @@ class OrdersController extends BaseController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->processCreate();
         } else {
-            // Get available tables for waiters, or all tables for admins
-            if ($user['role'] === ROLE_WAITER) {
-                $waiter = $this->waiterModel->findBy('user_id', $user['id']);
-                $tables = $waiter ? $this->tableModel->getWaiterTables($waiter['id']) : [];
-            } else {
-                $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
-            }
+            // Now all users (including waiters) can see all active tables
+            $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
             
             $dishes = $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC');
             
@@ -245,24 +240,27 @@ class OrdersController extends BaseController {
             return;
         }
         
-        $table = $this->tableModel->find($tableId);
+        // Get table with waiter information
+        $query = "SELECT t.*, w.employee_code, u.name as waiter_name 
+                  FROM tables t 
+                  LEFT JOIN waiters w ON t.waiter_id = w.id 
+                  LEFT JOIN users u ON w.user_id = u.id 
+                  WHERE t.id = ? AND t.active = 1";
+        
+        $stmt = $this->tableModel->db->prepare($query);
+        $stmt->execute([$tableId]);
+        $table = $stmt->fetch();
+        
         if (!$table) {
             $this->redirect('orders', 'error', 'Mesa no encontrada');
             return;
         }
         
-        $user = $this->getCurrentUser();
-        
-        // Check permissions for waiters
-        if ($user['role'] === ROLE_WAITER) {
-            $waiter = $this->waiterModel->findBy('user_id', $user['id']);
-            if (!$waiter || $table['waiter_id'] != $waiter['id']) {
-                $this->redirect('orders', 'error', 'No tienes permisos para ver los pedidos de esta mesa');
-                return;
-            }
-        }
-        
-        $orders = $this->orderModel->getOrdersWithDetails(['table_id' => $tableId]);
+        // Get orders for today for this table
+        $orders = $this->orderModel->getOrdersWithDetails([
+            'table_id' => $tableId,
+            'date' => date('Y-m-d')
+        ]);
         
         $this->view('orders/table', [
             'table' => $table,
@@ -419,8 +417,13 @@ class OrdersController extends BaseController {
         try {
             $orderId = $this->orderModel->createOrderWithItems($orderData, $items);
             
-            // Update table status to occupied
-            $this->tableModel->update($_POST['table_id'], ['status' => TABLE_OCCUPIED]);
+            // Block table by assigning it to the waiter and setting status to occupied
+            if (!empty($_POST['table_id'])) {
+                $this->tableModel->update($_POST['table_id'], [
+                    'status' => TABLE_OCCUPIED,
+                    'waiter_id' => $waiterId  // Block the table for this waiter
+                ]);
+            }
             
             $this->redirect('orders/show/' . $orderId, 'success', 'Pedido creado correctamente');
         } catch (Exception $e) {
@@ -562,6 +565,23 @@ class OrdersController extends BaseController {
         $user = $this->getCurrentUser();
         if (($user['role'] === ROLE_ADMIN || $user['role'] === ROLE_CASHIER) && empty($data['waiter_id'])) {
             $errors['waiter_id'] = 'Debe seleccionar un mesero';
+        }
+        
+        // Validate customer selection (mandatory)
+        $hasExistingCustomer = !empty($data['customer_id']);
+        $hasNewCustomer = !empty($data['new_customer_name']) && !empty($data['new_customer_phone']);
+        
+        if (!$hasExistingCustomer && !$hasNewCustomer) {
+            $errors['customer_id'] = 'Debe seleccionar un cliente existente o crear uno nuevo';
+        }
+        
+        // Validate new customer data if provided
+        if (!$hasExistingCustomer && !empty($data['new_customer_name']) && empty($data['new_customer_phone'])) {
+            $errors['customer_id'] = 'Debe proporcionar el teléfono del cliente';
+        }
+        
+        if (!$hasExistingCustomer && empty($data['new_customer_name']) && !empty($data['new_customer_phone'])) {
+            $errors['customer_id'] = 'Debe proporcionar el nombre del cliente';
         }
         
         return $errors;
