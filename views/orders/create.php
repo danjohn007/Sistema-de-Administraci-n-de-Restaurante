@@ -520,15 +520,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Form validation for customer requirement
+    // Form validation for customer requirement (relaxed - customer is optional)
     form.addEventListener('submit', function(e) {
         const customerId = document.getElementById('customer_id').value;
         const newCustomerName = document.getElementById('new_customer_name').value;
         const newCustomerPhone = document.getElementById('new_customer_phone').value;
         
-        if (!customerId && (!newCustomerName || !newCustomerPhone)) {
+        // Only validate if user started entering new customer info but didn't complete it
+        if (!customerId && newCustomerName && !newCustomerPhone) {
             e.preventDefault();
-            alert('Debe seleccionar un cliente existente o crear uno nuevo con nombre y teléfono.');
+            alert('Si va a crear un cliente nuevo, debe proporcionar tanto el nombre como el teléfono.');
+            return false;
+        }
+        
+        if (!customerId && !newCustomerName && newCustomerPhone) {
+            e.preventDefault();
+            alert('Si va a crear un cliente nuevo, debe proporcionar tanto el nombre como el teléfono.');
             return false;
         }
         

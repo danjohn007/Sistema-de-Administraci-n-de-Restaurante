@@ -284,10 +284,10 @@ class WaitersController extends BaseController {
                 ]);
             }
             
-            // Assign selected tables
+            // Assign selected tables (allow assignment to any active table regardless of status)
             foreach ($tableIds as $tableId) {
                 $table = $this->tableModel->find($tableId);
-                if ($table && $table['active'] && $table['status'] === TABLE_AVAILABLE) {
+                if ($table && $table['active']) {
                     $this->tableModel->assignWaiter($tableId, $waiterId);
                 }
             }
