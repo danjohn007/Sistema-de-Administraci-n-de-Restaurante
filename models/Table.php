@@ -36,9 +36,10 @@ class Table extends BaseModel {
     }
     
     public function assignWaiter($tableId, $waiterId) {
+        // Only assign the waiter, don't change table status
+        // Table status changes only when orders are created/completed
         return $this->update($tableId, [
-            'waiter_id' => $waiterId,
-            'status' => TABLE_OCCUPIED
+            'waiter_id' => $waiterId
         ]);
     }
     
