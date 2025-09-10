@@ -105,7 +105,7 @@ class TicketsController extends BaseController {
         ]);
     }
     
-    public function delete($id) {
+    public function cancel($id) {
         $ticket = $this->ticketModel->find($id);
         if (!$ticket) {
             $this->redirect('tickets', 'error', 'Ticket no encontrado');
@@ -114,18 +114,44 @@ class TicketsController extends BaseController {
         
         $user = $this->getCurrentUser();
         
-        // Only admins can delete tickets
+        // Only admins can cancel tickets
         if ($user['role'] !== ROLE_ADMIN) {
-            $this->redirect('tickets', 'error', 'No tienes permisos para eliminar tickets');
+            $this->redirect('tickets', 'error', 'No tienes permisos para cancelar tickets');
             return;
         }
         
-        try {
-            $this->ticketModel->delete($id);
-            $this->redirect('tickets', 'success', 'Ticket eliminado correctamente');
-        } catch (Exception $e) {
-            $this->redirect('tickets', 'error', 'Error al eliminar el ticket: ' . $e->getMessage());
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $reason = trim($_POST['cancellation_reason'] ?? '');
+            
+            if (empty($reason)) {
+                $this->view('tickets/cancel', [
+                    'ticket' => $ticket,
+                    'error' => 'El motivo de cancelación es obligatorio'
+                ]);
+                return;
+            }
+            
+            try {
+                $this->ticketModel->cancelTicket($id, $reason, $user['id']);
+                $this->redirect('tickets', 'success', 'Ticket cancelado correctamente');
+            } catch (Exception $e) {
+                $this->view('tickets/cancel', [
+                    'ticket' => $ticket,
+                    'error' => 'Error al cancelar el ticket: ' . $e->getMessage()
+                ]);
+            }
+        } else {
+            // Show cancellation form
+            $ticketDetails = $this->ticketModel->getTicketWithDetails($id);
+            $this->view('tickets/cancel', [
+                'ticket' => $ticketDetails
+            ]);
         }
+    }
+    
+    public function delete($id) {
+        // Redirect to cancel method for admin-only cancellation
+        $this->redirect('tickets/cancel/' . $id);
     }
     
     public function report() {
@@ -171,6 +197,7 @@ class TicketsController extends BaseController {
             if (isset($_POST['table_id'])) {
                 // Multiple orders from a table
                 $tableId = $_POST['table_id'];
+                $separateByCustomer = isset($_POST['separate_by_customer']) && $_POST['separate_by_customer'] == '1';
                 
                 // Get all ready orders for this table
                 $readyOrders = $this->orderModel->getOrdersReadyForTicket();
@@ -183,14 +210,27 @@ class TicketsController extends BaseController {
                 }
                 
                 $orderIds = array_map(function($order) { return $order['id']; }, $tableOrders);
-                $ticketId = $this->ticketModel->createTicketFromMultipleOrders($orderIds, $user['id'], $paymentMethod);
+                
+                if ($separateByCustomer) {
+                    // Create separate tickets by customer
+                    $ticketIds = $this->ticketModel->createSeparateTicketsByCustomer($orderIds, $user['id'], $paymentMethod);
+                    $message = 'Tickets generados correctamente (' . count($ticketIds) . ' tickets)';
+                    $redirectUrl = 'tickets/show/' . $ticketIds[0]; // Redirect to first ticket
+                } else {
+                    // Create single ticket for all orders
+                    $ticketId = $this->ticketModel->createTicketFromMultipleOrders($orderIds, $user['id'], $paymentMethod);
+                    $message = 'Ticket generado correctamente';
+                    $redirectUrl = 'tickets/show/' . $ticketId;
+                }
             } else {
                 // Single order (backward compatibility)
                 $orderId = $_POST['order_id'];
                 $ticketId = $this->ticketModel->createTicket($orderId, $user['id'], $paymentMethod);
+                $message = 'Ticket generado correctamente';
+                $redirectUrl = 'tickets/show/' . $ticketId;
             }
             
-            $this->redirect('tickets/show/' . $ticketId, 'success', 'Ticket generado correctamente');
+            $this->redirect($redirectUrl, 'success', $message);
         } catch (Exception $e) {
             $tablesWithReadyOrders = $this->orderModel->getReadyOrdersGroupedByTable();
             $this->view('tickets/create', [

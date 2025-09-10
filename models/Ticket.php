@@ -235,6 +235,123 @@ class Ticket extends BaseModel {
         }
     }
     
+    public function createSeparateTicketsByCustomer($orderIds, $cashierId, $paymentMethod = 'efectivo') {
+        try {
+            $this->db->beginTransaction();
+            
+            // Get order details and group by customer
+            $orderModel = new Order();
+            $customerOrders = [];
+            $tableId = null;
+            
+            foreach ($orderIds as $orderId) {
+                $order = $orderModel->find($orderId);
+                if (!$order) {
+                    throw new Exception("Orden {$orderId} no encontrada");
+                }
+                
+                if ($order['status'] !== ORDER_READY) {
+                    throw new Exception("La orden {$orderId} no está en estado 'Listo'");
+                }
+                
+                // Check if order already has a ticket
+                $existingTicket = $this->findBy('order_id', $orderId);
+                if ($existingTicket) {
+                    throw new Exception("La orden {$orderId} ya tiene un ticket generado");
+                }
+                
+                // Validate all orders are from the same table
+                if ($tableId === null) {
+                    $tableId = $order['table_id'];
+                } elseif ($tableId !== $order['table_id']) {
+                    throw new Exception('Todas las órdenes deben ser de la misma mesa');
+                }
+                
+                // Group by customer name (use "Cliente General" if no customer name)
+                $customerKey = $order['customer_name'] ?? ($order['customer_id'] ? 'Cliente-' . $order['customer_id'] : 'Cliente General');
+                
+                if (!isset($customerOrders[$customerKey])) {
+                    $customerOrders[$customerKey] = [];
+                }
+                $customerOrders[$customerKey][] = $order;
+            }
+            
+            if (empty($customerOrders)) {
+                throw new Exception('No se encontraron órdenes válidas');
+            }
+            
+            $ticketIds = [];
+            
+            // Create a separate ticket for each customer group
+            foreach ($customerOrders as $customerName => $orders) {
+                $totalSubtotal = 0;
+                $orderIdsForCustomer = [];
+                
+                foreach ($orders as $order) {
+                    $totalSubtotal += $order['total'];
+                    $orderIdsForCustomer[] = $order['id'];
+                }
+                
+                // Calculate totals with proper rounding
+                $totalWithTax = $totalSubtotal;
+                $subtotal = round($totalWithTax / 1.16, 2);
+                $tax = round($totalWithTax - $subtotal, 2);
+                $total = $totalWithTax;
+                
+                // Create ticket for this customer group
+                $mainOrder = $orders[0];
+                $ticketData = [
+                    'order_id' => intval($mainOrder['id']),
+                    'ticket_number' => $this->generateTicketNumber(),
+                    'cashier_id' => intval($cashierId),
+                    'subtotal' => $subtotal,
+                    'tax' => $tax,
+                    'total' => $total,
+                    'payment_method' => $paymentMethod
+                ];
+                
+                $ticketId = $this->create($ticketData);
+                
+                if (!$ticketId) {
+                    throw new Exception("Error al crear el ticket para {$customerName}");
+                }
+                
+                // Update all orders in this customer group
+                $customerModel = new Customer();
+                foreach ($orders as $order) {
+                    $orderModel->updateOrderStatus($order['id'], ORDER_DELIVERED);
+                    
+                    // Update customer statistics if order has a customer
+                    if ($order['customer_id']) {
+                        $customerModel->updateStats($order['customer_id'], $order['total']);
+                    }
+                }
+                
+                // Deduct inventory for this ticket
+                $this->deductInventoryForMultipleOrders($ticketId, $orderIdsForCustomer, $cashierId);
+                
+                $ticketIds[] = $ticketId;
+            }
+            
+            // Free the table after all tickets are created
+            if ($tableId) {
+                $tableModel = new Table();
+                $tableModel->update($tableId, [
+                    'status' => TABLE_AVAILABLE,
+                    'waiter_id' => null
+                ]);
+            }
+            
+            $this->db->commit();
+            error_log("Separate tickets by customer created successfully: " . implode(', ', $ticketIds));
+            return $ticketIds;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            error_log("Error creating separate tickets by customer: " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
     public function getTicketWithDetails($ticketId) {
         $query = "SELECT t.*, o.table_id, o.waiter_id, o.notes as order_notes,
                          tb.number as table_number,
@@ -278,6 +395,96 @@ class Ticket extends BaseModel {
         }
         
         return $ticket;
+    }
+    
+    public function cancelTicket($ticketId, $reason, $adminId) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Get ticket details
+            $ticket = $this->find($ticketId);
+            if (!$ticket) {
+                throw new Exception('Ticket no encontrado');
+            }
+            
+            // Check if ticket is already cancelled
+            if (isset($ticket['status']) && $ticket['status'] === 'cancelled') {
+                throw new Exception('El ticket ya está cancelado');
+            }
+            
+            // Update ticket status to cancelled
+            $updateData = [
+                'status' => 'cancelled',
+                'cancelled_at' => date('Y-m-d H:i:s'),
+                'cancelled_by' => $adminId,
+                'cancellation_reason' => $reason
+            ];
+            
+            $this->update($ticketId, $updateData);
+            
+            // Revert order status back to READY so it can be processed again if needed
+            $orderModel = new Order();
+            $orderModel->update($ticket['order_id'], ['status' => ORDER_READY]);
+            
+            // Revert customer statistics if applicable
+            $order = $orderModel->find($ticket['order_id']);
+            if ($order && $order['customer_id']) {
+                $customerModel = new Customer();
+                // Subtract the amount from customer stats
+                $customerModel->revertStats($order['customer_id'], $ticket['total']);
+            }
+            
+            // Add inventory back if auto-deduct was enabled
+            $this->revertInventoryForCancelledTicket($ticketId, $ticket['order_id'], $adminId);
+            
+            // Don't free the table automatically - let admin decide
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            error_log("Error cancelling ticket: " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    private function revertInventoryForCancelledTicket($ticketId, $orderId, $adminId) {
+        // Check if inventory module exists and auto-deduct is enabled
+        if (!class_exists('InventoryMovement')) {
+            return; // Inventory module not available
+        }
+        
+        try {
+            $inventoryModel = new InventoryMovement();
+            $orderModel = new Order();
+            
+            // Get order items
+            $orderItems = $orderModel->getOrderItems($orderId);
+            
+            foreach ($orderItems as $item) {
+                // Check if dish has ingredients
+                $dishIngredientsModel = new DishIngredient();
+                $ingredients = $dishIngredientsModel->findAll(['dish_id' => $item['dish_id']]);
+                
+                foreach ($ingredients as $ingredient) {
+                    // Add inventory back (reverse the deduction)
+                    $quantity = $ingredient['quantity_needed'] * $item['quantity'];
+                    
+                    $inventoryModel->create([
+                        'product_id' => $ingredient['product_id'],
+                        'movement_type' => MOVEMENT_TYPE_IN,
+                        'quantity' => $quantity,
+                        'reference_type' => 'ticket_cancellation',
+                        'reference_id' => $ticketId,
+                        'notes' => "Reversión por cancelación de ticket #{$ticketId}",
+                        'created_by' => $adminId
+                    ]);
+                }
+            }
+        } catch (Exception $e) {
+            // Log error but don't fail the cancellation
+            error_log("Error reverting inventory for cancelled ticket: " . $e->getMessage());
+        }
     }
     
     public function getTicketsByDate($date = null, $cashierId = null, $filters = []) {
