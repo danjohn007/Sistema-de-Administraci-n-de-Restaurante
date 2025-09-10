@@ -106,6 +106,88 @@ class Reservation extends BaseModel {
         return $result['count'] == 0;
     }
     
+    public function getTablesBlockedByReservations($dateTime = null) {
+        if (!$dateTime) {
+            $dateTime = date('Y-m-d H:i:s');
+        }
+        
+        // Get reservations that should block tables (30 minutes before reservation time)
+        $query = "SELECT rt.table_id, r.reservation_datetime, r.customer_name, r.id as reservation_id
+                  FROM reservations r
+                  JOIN reservation_tables rt ON r.id = rt.reservation_id
+                  WHERE r.status IN ('pendiente', 'confirmada')
+                  AND TIMESTAMPDIFF(MINUTE, ?, r.reservation_datetime) BETWEEN 0 AND 30";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$dateTime]);
+        
+        return $stmt->fetchAll();
+    }
+    
+    public function isTableBlockedByReservation($tableId, $dateTime = null) {
+        if (!$dateTime) {
+            $dateTime = date('Y-m-d H:i:s');
+        }
+        
+        $blockedTables = $this->getTablesBlockedByReservations($dateTime);
+        
+        foreach ($blockedTables as $blocked) {
+            if ($blocked['table_id'] == $tableId) {
+                return $blocked;
+            }
+        }
+        
+        return false;
+    }
+    
+    public function forceUnblockTable($tableId, $userId, $reason) {
+        // Only admin and cashier can force unblock
+        $userModel = new User();
+        $user = $userModel->find($userId);
+        
+        if (!$user || !in_array($user['role'], [ROLE_ADMIN, ROLE_CASHIER])) {
+            throw new Exception('No tienes permisos para desbloquear mesas');
+        }
+        
+        // Log the unblock action
+        $query = "INSERT INTO table_unblock_log (table_id, unblocked_by, reason, created_at) 
+                  VALUES (?, ?, ?, NOW())";
+        
+        try {
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$tableId, $userId, $reason]);
+            return true;
+        } catch (Exception $e) {
+            // If log table doesn't exist, continue anyway
+            error_log("Could not log table unblock: " . $e->getMessage());
+            return true;
+        }
+    }
+    
+    public function canUseTable($tableId, $userId) {
+        $userModel = new User();
+        $user = $userModel->find($userId);
+        
+        if (!$user) {
+            return false;
+        }
+        
+        // Admin and cashier can always use tables
+        if (in_array($user['role'], [ROLE_ADMIN, ROLE_CASHIER])) {
+            return true;
+        }
+        
+        // Check if table is blocked by reservation
+        $blocked = $this->isTableBlockedByReservation($tableId);
+        
+        if ($blocked) {
+            return false; // Waiters cannot use blocked tables
+        }
+        
+        return true;
+    }
+    }
+    
     public function createReservationWithCustomer($reservationData, $customerData) {
         try {
             $this->db->beginTransaction();

@@ -63,6 +63,18 @@ class Customer extends BaseModel {
         return $stmt->execute([$orderTotal, $customerId]);
     }
     
+    public function revertStats($customerId, $orderTotal) {
+        $query = "UPDATE customers 
+                  SET total_visits = GREATEST(total_visits - 1, 0), 
+                      total_spent = GREATEST(total_spent - ?, 0),
+                      updated_at = CURRENT_TIMESTAMP
+                  WHERE id = ?";
+        
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([$orderTotal, $customerId]);
+    }
+    }
+    
     public function getCustomerWithStats($customerId) {
         $query = "SELECT c.*, 
                          COUNT(o.id) as order_count,

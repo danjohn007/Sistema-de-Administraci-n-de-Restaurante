@@ -32,11 +32,20 @@
                                 required>
                             <option value="">Seleccionar mesa...</option>
                             <?php foreach ($tables as $table): ?>
+                                <?php 
+                                $disabled = !$table['can_use'] ? 'disabled' : '';
+                                $statusText = ucfirst($table['status']);
+                                if ($table['blocked_by_reservation']) {
+                                    $reservationTime = date('H:i', strtotime($table['blocked_by_reservation']['reservation_datetime']));
+                                    $statusText .= " (Reservada {$reservationTime})";
+                                }
+                                ?>
                                 <option value="<?= $table['id'] ?>" 
-                                        <?= (($old['table_id'] ?? '') == $table['id']) ? 'selected' : '' ?>>
+                                        <?= (($old['table_id'] ?? '') == $table['id']) ? 'selected' : '' ?>
+                                        <?= $disabled ?>>
                                     Mesa <?= $table['number'] ?> 
                                     (Cap: <?= $table['capacity'] ?>) 
-                                    - <?= ucfirst($table['status']) ?>
+                                    - <?= $statusText ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -197,7 +206,7 @@
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h6 class="card-title mb-0"><?= htmlspecialchars($dish['name']) ?></h6>
-                                        <span class="badge bg-success">$<?= number_format($dish['price'], 2) ?></span>
+                                        <span class="price-menu-item">$<?= number_format($dish['price'], 2) ?></span>
                                     </div>
                                     <?php if ($dish['description']): ?>
                                         <p class="text-muted small mb-2"><?= htmlspecialchars($dish['description']) ?></p>
@@ -261,7 +270,7 @@
                 </div>
             </div>
             <div class="col-md-6 text-end">
-                <button type="submit" form="orderForm" class="btn btn-primary btn-lg">
+                <button type="button" class="btn btn-primary btn-lg" id="fixedCreateOrderBtn">
                     <i class="bi bi-check-circle"></i> CREAR PEDIDO
                 </button>
             </div>
@@ -534,6 +543,30 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return true;
     });
+    
+    // Handle fixed button click
+    const fixedCreateOrderBtn = document.getElementById('fixedCreateOrderBtn');
+    if (fixedCreateOrderBtn) {
+        fixedCreateOrderBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Disable button to prevent double submission
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i> Creando...';
+            
+            // Trigger form validation and submission
+            const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+            const formValid = form.dispatchEvent(submitEvent);
+            
+            if (formValid && form.checkValidity()) {
+                form.submit();
+            } else {
+                // Re-enable button if form is invalid
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-check-circle"></i> CREAR PEDIDO';
+            }
+        });
+    }
 });
 </script>
 

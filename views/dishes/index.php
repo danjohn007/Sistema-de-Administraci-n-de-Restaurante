@@ -97,9 +97,9 @@
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <strong class="text-success">
+                                <span class="price-display">
                                     $<?= number_format($dish['price'], 2) ?>
-                                </strong>
+                                </span>
                             </td>
                             <td>
                                 <small class="text-muted">

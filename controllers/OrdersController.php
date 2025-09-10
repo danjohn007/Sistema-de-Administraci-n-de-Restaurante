@@ -5,6 +5,7 @@ class OrdersController extends BaseController {
     private $dishModel;
     private $waiterModel;
     private $customerModel;
+    private $reservationModel;
     
     public function __construct() {
         parent::__construct();
@@ -14,6 +15,7 @@ class OrdersController extends BaseController {
         $this->dishModel = new Dish();
         $this->waiterModel = new Waiter();
         $this->customerModel = new Customer();
+        $this->reservationModel = new Reservation();
     }
     
     public function index() {
@@ -62,6 +64,13 @@ class OrdersController extends BaseController {
         } else {
             // Now all users (including waiters) can see all active tables
             $tables = $this->tableModel->findAll(['active' => 1], 'number ASC');
+            
+            // Add reservation blocking information to tables
+            foreach ($tables as &$table) {
+                $blocked = $this->reservationModel->isTableBlockedByReservation($table['id']);
+                $table['blocked_by_reservation'] = $blocked;
+                $table['can_use'] = $this->reservationModel->canUseTable($table['id'], $user['id']);
+            }
             
             $dishes = $this->dishModel->findAll(['active' => 1], 'category ASC, name ASC');
             
@@ -582,6 +591,63 @@ class OrdersController extends BaseController {
         
         if (!$hasExistingCustomer && empty($data['new_customer_name']) && !empty($data['new_customer_phone'])) {
             $errors['customer_id'] = 'Debe proporcionar el nombre del cliente';
+        }
+        
+        // Validate table blocking for waiters and reservations
+        if (!empty($data['table_id'])) {
+            $table = $this->tableModel->find($data['table_id']);
+            if ($table) {
+                $user = $this->getCurrentUser();
+                
+                // Check reservation blocking for all users
+                if (!$this->reservationModel->canUseTable($data['table_id'], $user['id'])) {
+                    $blocked = $this->reservationModel->isTableBlockedByReservation($data['table_id']);
+                    if ($blocked) {
+                        $reservationTime = date('H:i', strtotime($blocked['reservation_datetime']));
+                        $errors['table_id'] = "La mesa está bloqueada por una reservación de {$blocked['customer_name']} a las {$reservationTime}. Solo administradores y cajeros pueden desbloquearla.";
+                    }
+                }
+                
+                // Get current waiter if user is a waiter
+                $currentWaiterId = null;
+                if ($user['role'] === ROLE_WAITER) {
+                    $waiter = $this->waiterModel->findBy('user_id', $user['id']);
+                    $currentWaiterId = $waiter ? $waiter['id'] : null;
+                } else {
+                    // For admin/cashier, get the selected waiter
+                    $currentWaiterId = $data['waiter_id'] ?? null;
+                }
+                
+                // Check if table is already blocked by another waiter
+                if ($table['status'] === TABLE_OCCUPIED && $table['waiter_id']) {
+                    // Allow if it's the same waiter or if editing an existing order from this table
+                    $isAllowed = false;
+                    
+                    if ($table['waiter_id'] == $currentWaiterId) {
+                        $isAllowed = true;
+                    }
+                    
+                    // If editing, check if the order belongs to this table
+                    if ($excludeId) {
+                        $order = $this->orderModel->find($excludeId);
+                        if ($order && $order['table_id'] == $data['table_id']) {
+                            $isAllowed = true;
+                        }
+                    }
+                    
+                    if (!$isAllowed) {
+                        $blockedWaiter = $this->waiterModel->find($table['waiter_id']);
+                        $waiterName = 'otro mesero';
+                        if ($blockedWaiter) {
+                            $waiterUser = $this->waiterModel->db->prepare("SELECT name FROM users WHERE id = ?");
+                            $waiterUser->execute([$blockedWaiter['user_id']]);
+                            $waiterUserData = $waiterUser->fetch();
+                            $waiterName = $waiterUserData ? $waiterUserData['name'] : $blockedWaiter['employee_code'];
+                        }
+                        $errors['table_id'] = "La mesa está ocupada por {$waiterName}. Solo el mesero asignado puede agregar pedidos a esta mesa.";
+                    }
+                }
+            }
         }
         
         return $errors;

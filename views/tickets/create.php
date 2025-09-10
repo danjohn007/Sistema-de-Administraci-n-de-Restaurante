@@ -163,6 +163,20 @@
                         <?php endif; ?>
                     </div>
                     
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="1" 
+                                   id="separate_by_customer" name="separate_by_customer"
+                                   <?= (($old['separate_by_customer'] ?? '') === '1') ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="separate_by_customer">
+                                <i class="bi bi-person-lines-fill"></i> Separar tickets por cliente
+                            </label>
+                            <div class="form-text">
+                                Si está marcado, se generará un ticket separado para cada cliente en la mesa
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="card bg-light mb-3" id="ticketPreview" style="display: none;">
                         <div class="card-body">
                             <h6 class="card-title">Preview del Ticket</h6>
