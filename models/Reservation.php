@@ -186,7 +186,6 @@ class Reservation extends BaseModel {
         
         return true;
     }
-    }
     
     public function createReservationWithCustomer($reservationData, $customerData) {
         try {

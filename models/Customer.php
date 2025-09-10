@@ -73,7 +73,6 @@ class Customer extends BaseModel {
         $stmt = $this->db->prepare($query);
         return $stmt->execute([$orderTotal, $customerId]);
     }
-    }
     
     public function getCustomerWithStats($customerId) {
         $query = "SELECT c.*, 

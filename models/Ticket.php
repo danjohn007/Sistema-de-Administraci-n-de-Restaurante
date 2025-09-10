@@ -486,7 +486,6 @@ class Ticket extends BaseModel {
             error_log("Error reverting inventory for cancelled ticket: " . $e->getMessage());
         }
     }
-    }
     
     public function getTicketsByDate($date = null, $cashierId = null, $filters = []) {
         $date = $date ?: date('Y-m-d');
